@@ -45,8 +45,9 @@
     <style>
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #080c15;
+            background-color: #070b13;
             color: #e2e8f0;
+            overflow-x: hidden;
         }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #0b0f19; }
@@ -57,6 +58,7 @@
             background: rgba(15, 23, 42, 0.75);
             backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .tab-btn.active {
@@ -66,25 +68,54 @@
             font-weight: 600;
         }
 
+        /* Flowchart Pipeline & Node Animations */
         .flow-node {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
         }
         .flow-node:hover {
-            transform: translateY(-3px);
+            transform: translateY(-4px) scale(1.02);
             border-color: #818cf8;
-            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
+            box-shadow: 0 12px 28px rgba(99, 102, 241, 0.25);
         }
         .flow-node.active-step {
-            border-color: #10b981;
-            background: rgba(16, 185, 129, 0.15);
-            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
-            animation: pulseActive 2s infinite;
+            border-color: #10b981 !important;
+            background: linear-gradient(180deg, rgba(16, 185, 129, 0.22) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.4), inset 0 0 15px rgba(16, 185, 129, 0.2) !important;
+            animation: pulseActive 2s infinite ease-in-out;
+            transform: translateY(-3px);
+        }
+        .flow-node.visited-step {
+            border-color: rgba(99, 102, 241, 0.6);
+            background: rgba(30, 41, 59, 0.7);
         }
         @keyframes pulseActive {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.02); }
+            0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.4), 0 0 40px rgba(16, 185, 129, 0.15); }
+            50% { box-shadow: 0 0 32px rgba(16, 185, 129, 0.65), 0 0 60px rgba(16, 185, 129, 0.25); }
         }
 
+        /* Connector arrows between flowchart nodes */
+        .flow-connector {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #475569;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .flow-connector.active {
+            color: #10b981;
+            filter: drop-shadow(0 0 8px #10b981);
+        }
+        .flow-connector.active i {
+            animation: bounceRight 1.2s infinite ease-in-out;
+        }
+        @keyframes bounceRight {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(4px); }
+        }
+
+        /* Ambient Backing Glows */
         .ambient-glow {
             position: fixed;
             width: 600px;
@@ -93,7 +124,42 @@
             filter: blur(140px);
             pointer-events: none;
             z-index: 0;
-            opacity: 0.25;
+            opacity: 0.22;
+        }
+
+        /* Progress Bar Animation */
+        .flow-progress-bar {
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(90deg, #6366f1 0%, #06b6d4 50%, #10b981 100%);
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.5);
+        }
+
+        /* Canvas Card Styling */
+        #adsaGraphCanvas {
+            background: radial-gradient(circle at center, #0f172a 0%, #070b13 100%);
+            border-radius: 0.75rem;
+        }
+
+        /* Hasse Diagram SVG styling */
+        .hasse-link {
+            stroke: rgba(148, 163, 184, 0.25);
+            stroke-width: 1.8;
+            stroke-dasharray: 4 2;
+            transition: all 0.3s ease;
+        }
+        .hasse-link.highlighted {
+            stroke: #a855f7;
+            stroke-width: 3;
+            stroke-dasharray: none;
+            filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.8));
+        }
+        .hasse-node {
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .hasse-node:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.6));
         }
     </style>
 </head>
@@ -458,101 +524,182 @@
                             <span>End-to-End Visual Workflow Architecture</span>
                         </div>
                         <h2 class="text-xl font-bold text-white mt-1">Interactive SaaS Ticket Escalation Flowchart</h2>
-                        <p class="text-xs text-slate-400 mt-0.5">Click any stage in the flowchart to see its internal mathematical model, code implementation, and role in zero-context-loss ticket resolution.</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Click any stage or use the playback controller to watch complaints navigate the complete 7-stage lifecycle with zero context loss.</p>
                     </div>
-                    <div class="flex items-center space-x-2">
-                        <button onclick="animateFlowchartExecution()" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition flex items-center space-x-1.5 shadow-md shadow-emerald-600/30">
-                            <i class="fa-solid fa-play"></i>
-                            <span>Animate Complete Traversal</span>
-                        </button>
+
+                    <!-- Flowchart Playback Controls -->
+                    <div class="flex items-center flex-wrap gap-2">
+                        <div class="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 space-x-1">
+                            <button id="flow-btn-play" onclick="toggleFlowchartAutoPlay()" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition flex items-center space-x-1.5 shadow-md shadow-emerald-600/30">
+                                <i id="flow-play-icon" class="fa-solid fa-play"></i>
+                                <span id="flow-play-text">Auto-Play</span>
+                            </button>
+                            <button onclick="stepFlowchart(-1)" title="Previous Stage" class="p-1.5 px-2.5 rounded-lg hover:bg-slate-800 text-slate-300 text-xs transition">
+                                <i class="fa-solid fa-backward-step"></i>
+                            </button>
+                            <button onclick="stepFlowchart(1)" title="Next Stage" class="p-1.5 px-2.5 rounded-lg hover:bg-slate-800 text-slate-300 text-xs transition">
+                                <i class="fa-solid fa-forward-step"></i>
+                            </button>
+                            <button onclick="resetFlowchart()" title="Reset" class="p-1.5 px-2.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs transition">
+                                <i class="fa-solid fa-rotate-left"></i>
+                            </button>
+                        </div>
+                        <select id="flow-speed-select" onchange="setFlowSpeed(this.value)" class="bg-slate-950 text-slate-300 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono focus:outline-none focus:border-indigo-500">
+                            <option value="900">Speed: 1x (Normal)</option>
+                            <option value="450">Speed: 2x (Fast)</option>
+                            <option value="1500">Speed: 0.5x (Slow)</option>
+                        </select>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-3 mt-6 text-center">
-                    <div id="flow-step-1" onclick="inspectFlowStep(1)" class="flow-node cursor-pointer bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col items-center justify-between h-44">
-                        <div class="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-sm mb-2"><i class="fa-solid fa-user-tag"></i></div>
+                <!-- Animated Progress Track -->
+                <div class="mt-4 bg-slate-950 p-3 rounded-xl border border-slate-800/80">
+                    <div class="flex items-center justify-between text-xs font-mono mb-1.5">
+                        <span class="text-slate-400 flex items-center space-x-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                            <span id="flow-status-text">Stage 1 of 7 &bull; Customer Intake (DBMS ER Model)</span>
+                        </span>
+                        <span id="flow-pct-text" class="text-emerald-400 font-bold">14% Complete</span>
+                    </div>
+                    <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
+                        <div id="flow-progress-bar" class="flow-progress-bar h-full rounded-full" style="width: 14%"></div>
+                    </div>
+                </div>
+
+                <!-- Flowchart Connected Nodes Pipeline -->
+                <div class="mt-6 flex flex-col lg:flex-row items-center justify-between gap-2">
+                    <!-- Stage 1 -->
+                    <div id="flow-step-1" onclick="inspectFlowStep(1)" class="flow-node active-step flex-1 w-full cursor-pointer bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 flex flex-col items-center justify-between h-44 text-center">
+                        <div class="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-sm mb-1"><i class="fa-solid fa-user-tag"></i></div>
                         <div>
                             <span class="text-[10px] font-mono text-blue-400 font-bold uppercase tracking-wider">Stage 1</span>
                             <h4 class="font-bold text-xs text-white mt-0.5">Customer Intake</h4>
-                            <p class="text-[10px] text-slate-400 mt-1">SaaS Ticket arrives with Account ID &amp; SLA</p>
+                            <p class="text-[10px] text-slate-400 mt-1 leading-snug">SaaS Ticket arrives with Account ID &amp; SLA</p>
                         </div>
-                        <span class="text-[9px] px-2 py-0.5 rounded bg-slate-900 text-slate-300 font-mono">DBMS Link</span>
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 font-mono border border-blue-500/20">DBMS Link</span>
                     </div>
 
-                    <div id="flow-step-2" onclick="inspectFlowStep(2)" class="flow-node cursor-pointer bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col items-center justify-between h-44">
-                        <div class="w-10 h-10 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm mb-2"><i class="fa-brands fa-python"></i></div>
+                    <!-- Connector 1 -->
+                    <div id="flow-conn-1" class="flow-connector active p-1 text-slate-600 rotate-90 lg:rotate-0">
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </div>
+
+                    <!-- Stage 2 -->
+                    <div id="flow-step-2" onclick="inspectFlowStep(2)" class="flow-node flex-1 w-full cursor-pointer bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 flex flex-col items-center justify-between h-44 text-center">
+                        <div class="w-10 h-10 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm mb-1"><i class="fa-brands fa-python"></i></div>
                         <div>
                             <span class="text-[10px] font-mono text-indigo-400 font-bold uppercase tracking-wider">Stage 2</span>
                             <h4 class="font-bold text-xs text-white mt-0.5">NLP Classifier</h4>
-                            <p class="text-[10px] text-slate-400 mt-1">TF-IDF Vectorizer auto-tags category</p>
+                            <p class="text-[10px] text-slate-400 mt-1 leading-snug">TF-IDF Vectorizer auto-tags category</p>
                         </div>
-                        <span class="text-[9px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono">Python ML</span>
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 font-mono border border-indigo-500/20">Python ML</span>
                     </div>
 
-                    <div id="flow-step-3" onclick="inspectFlowStep(3)" class="flow-node cursor-pointer bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col items-center justify-between h-44">
-                        <div class="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm mb-2"><i class="fa-solid fa-database"></i></div>
+                    <!-- Connector 2 -->
+                    <div id="flow-conn-2" class="flow-connector p-1 text-slate-600 rotate-90 lg:rotate-0">
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </div>
+
+                    <!-- Stage 3 -->
+                    <div id="flow-step-3" onclick="inspectFlowStep(3)" class="flow-node flex-1 w-full cursor-pointer bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 flex flex-col items-center justify-between h-44 text-center">
+                        <div class="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm mb-1"><i class="fa-solid fa-database"></i></div>
                         <div>
                             <span class="text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-wider">Stage 3</span>
                             <h4 class="font-bold text-xs text-white mt-0.5">3NF Storage</h4>
-                            <p class="text-[10px] text-slate-400 mt-1">Context binding via Foreign Keys</p>
+                            <p class="text-[10px] text-slate-400 mt-1 leading-snug">Context binding via Foreign Keys</p>
                         </div>
-                        <span class="text-[9px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">DBMS 3NF</span>
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 font-mono border border-emerald-500/20">DBMS 3NF</span>
                     </div>
 
-                    <div id="flow-step-4" onclick="inspectFlowStep(4)" class="flow-node cursor-pointer bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col items-center justify-between h-44">
-                        <div class="w-10 h-10 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-sm mb-2"><i class="fa-solid fa-headset"></i></div>
+                    <!-- Connector 3 -->
+                    <div id="flow-conn-3" class="flow-connector p-1 text-slate-600 rotate-90 lg:rotate-0">
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </div>
+
+                    <!-- Stage 4 -->
+                    <div id="flow-step-4" onclick="inspectFlowStep(4)" class="flow-node flex-1 w-full cursor-pointer bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 flex flex-col items-center justify-between h-44 text-center">
+                        <div class="w-10 h-10 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-sm mb-1"><i class="fa-solid fa-headset"></i></div>
                         <div>
                             <span class="text-[10px] font-mono text-cyan-400 font-bold uppercase tracking-wider">Stage 4</span>
                             <h4 class="font-bold text-xs text-white mt-0.5">L1 Triage</h4>
-                            <p class="text-[10px] text-slate-400 mt-1">Ramesh / Sneha attempt direct fix</p>
+                            <p class="text-[10px] text-slate-400 mt-1 leading-snug">Ramesh / Sneha attempt direct fix</p>
                         </div>
-                        <span class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono">First Contact</span>
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 font-mono border border-cyan-500/20">First Contact</span>
                     </div>
 
-                    <div id="flow-step-5" onclick="inspectFlowStep(5)" class="flow-node cursor-pointer bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col items-center justify-between h-44">
-                        <div class="w-10 h-10 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-sm mb-2"><i class="fa-solid fa-route"></i></div>
+                    <!-- Connector 4 -->
+                    <div id="flow-conn-4" class="flow-connector p-1 text-slate-600 rotate-90 lg:rotate-0">
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </div>
+
+                    <!-- Stage 5 -->
+                    <div id="flow-step-5" onclick="inspectFlowStep(5)" class="flow-node flex-1 w-full cursor-pointer bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 flex flex-col items-center justify-between h-44 text-center">
+                        <div class="w-10 h-10 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-sm mb-1"><i class="fa-solid fa-route"></i></div>
                         <div>
                             <span class="text-[10px] font-mono text-purple-400 font-bold uppercase tracking-wider">Stage 5</span>
                             <h4 class="font-bold text-xs text-white mt-0.5">Dijkstra Routing</h4>
-                            <p class="text-[10px] text-slate-400 mt-1">Dynamic queue weights calculate fastest path</p>
+                            <p class="text-[10px] text-slate-400 mt-1 leading-snug">Dynamic queue weights calculate path</p>
                         </div>
-                        <span class="text-[9px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono">ADSA + DMGT</span>
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 font-mono border border-purple-500/20">ADSA + DMGT</span>
                     </div>
 
-                    <div id="flow-step-6" onclick="inspectFlowStep(6)" class="flow-node cursor-pointer bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col items-center justify-between h-44">
-                        <div class="w-10 h-10 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-sm mb-2"><i class="fa-brands fa-java"></i></div>
+                    <!-- Connector 5 -->
+                    <div id="flow-conn-5" class="flow-connector p-1 text-slate-600 rotate-90 lg:rotate-0">
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </div>
+
+                    <!-- Stage 6 -->
+                    <div id="flow-step-6" onclick="inspectFlowStep(6)" class="flow-node flex-1 w-full cursor-pointer bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 flex flex-col items-center justify-between h-44 text-center">
+                        <div class="w-10 h-10 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-sm mb-1"><i class="fa-brands fa-java"></i></div>
                         <div>
                             <span class="text-[10px] font-mono text-amber-400 font-bold uppercase tracking-wider">Stage 6</span>
                             <h4 class="font-bold text-xs text-white mt-0.5">Specialist Resolve</h4>
-                            <p class="text-[10px] text-slate-400 mt-1">Polymorphic execution by L2/L3 expert</p>
+                            <p class="text-[10px] text-slate-400 mt-1 leading-snug">Polymorphic execution by L2/L3 expert</p>
                         </div>
-                        <span class="text-[9px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">OOPJ Strategy</span>
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 font-mono border border-amber-500/20">OOPJ Strategy</span>
                     </div>
 
-                    <div id="flow-step-7" onclick="inspectFlowStep(7)" class="flow-node cursor-pointer bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col items-center justify-between h-44">
-                        <div class="w-10 h-10 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center font-bold text-sm mb-2"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                    <!-- Connector 6 -->
+                    <div id="flow-conn-6" class="flow-connector p-1 text-slate-600 rotate-90 lg:rotate-0">
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </div>
+
+                    <!-- Stage 7 -->
+                    <div id="flow-step-7" onclick="inspectFlowStep(7)" class="flow-node flex-1 w-full cursor-pointer bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 flex flex-col items-center justify-between h-44 text-center">
+                        <div class="w-10 h-10 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center font-bold text-sm mb-1"><i class="fa-solid fa-clock-rotate-left"></i></div>
                         <div>
                             <span class="text-[10px] font-mono text-teal-400 font-bold uppercase tracking-wider">Stage 7</span>
                             <h4 class="font-bold text-xs text-white mt-0.5">Audit Trail Log</h4>
-                            <p class="text-[10px] text-slate-400 mt-1">Escalation stored permanently in DB</p>
+                            <p class="text-[10px] text-slate-400 mt-1 leading-snug">Escalation stored permanently in DB</p>
                         </div>
-                        <span class="text-[9px] px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 font-mono">Zero Context Loss</span>
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-teal-500/10 text-teal-300 font-mono border border-teal-500/20">Zero Context Loss</span>
                     </div>
                 </div>
 
-                <div id="flow-detail-panel" class="mt-6 p-4 rounded-xl bg-slate-950 border border-slate-800">
-                    <div class="flex items-center justify-between">
-                        <h4 id="flow-detail-title" class="text-sm font-bold text-indigo-400 flex items-center space-x-2">
+                <!-- Deep Dive Detail Panel -->
+                <div id="flow-detail-panel" class="mt-6 p-5 rounded-2xl bg-slate-950 border border-slate-800/90 shadow-xl">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-800/80 gap-2">
+                        <h4 id="flow-detail-title" class="text-sm font-bold text-emerald-400 flex items-center space-x-2">
                             <i class="fa-solid fa-circle-info"></i>
-                            <span>Flowchart Stage Deep Dive</span>
+                            <span>Stage 1: Customer Ticket Ingestion</span>
                         </h4>
-                        <span id="flow-detail-subject" class="text-xs font-mono px-2.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300">Select Any Stage Above</span>
+                        <div class="flex items-center space-x-2">
+                            <span id="flow-detail-subject" class="text-xs font-mono px-2.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">DBMS Unit 1 (ER Modeling)</span>
+                            <button onclick="switchTab('simulator')" class="px-2.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono transition flex items-center space-x-1">
+                                <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                                <span>Try in Simulator</span>
+                            </button>
+                        </div>
                     </div>
-                    <p id="flow-detail-desc" class="text-xs text-slate-300 mt-2 leading-relaxed">
-                        Click on any node in the flowchart above to inspect how each discipline interacts in real-time. For example, Stage 5 demonstrates ADSA Dijkstra running over a DMGT Poset hierarchy with dynamic edge weights!
+                    <p id="flow-detail-desc" class="text-xs text-slate-300 mt-3 leading-relaxed">
+                        Every support complaint is received with a foreign key binding to the Customer account. Subscription tier guarantees SLA contract requirements (e.g. Enterprise 1-hour response).
                     </p>
-                    <div id="flow-detail-code" class="mt-3 p-3 rounded-lg bg-slate-900 border border-slate-800/80 font-mono text-[11px] text-cyan-300 overflow-x-auto">
-                        // Real-time telemetry will appear here when executing simulation.
+                    <div class="mt-3">
+                        <div class="text-[11px] font-mono text-slate-500 mb-1 flex items-center justify-between">
+                            <span>Implementation Code Reference:</span>
+                            <span class="text-[10px] text-slate-600">Auto-executed in pipeline</span>
+                        </div>
+                        <pre id="flow-detail-code" class="p-3.5 rounded-xl bg-slate-900 border border-slate-800/90 font-mono text-xs text-cyan-300 overflow-x-auto shadow-inner">INSERT INTO tickets (customer_id, title, status) VALUES (1, 'Database pool exhausted', 'Assigned');</pre>
                     </div>
                 </div>
             </div>
@@ -986,35 +1133,139 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
-                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-center">
-                        <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider mb-4">Hasse Diagram (Support Poset Cover)</h4>
-                        <div class="flex flex-col items-center space-y-2">
-                            <div class="px-4 py-2 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-mono font-bold">Venkatesh Iyer (Specialist Lead · Top Cover)</div>
-                            <div class="text-slate-500 font-mono text-sm">↑</div>
-                            <div class="flex space-x-3">
-                                <div class="px-3 py-1.5 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs font-mono">Dr. Arvind Sen (L3 Tech)</div>
-                                <div class="px-3 py-1.5 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs font-mono">Lakshmi N. (L3 Finance)</div>
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-5">
+                    <!-- Interactive SVG Hasse Diagram -->
+                    <div class="lg:col-span-7 bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-800/80">
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Hasse Diagram &bull; Support Poset (S, &preceq;)</h4>
+                                <p class="text-[11px] text-slate-400 mt-0.5">Strict partial order without cycles &bull; Transitive reduction</p>
                             </div>
-                            <div class="text-slate-500 font-mono text-sm">↑</div>
-                            <div class="flex space-x-2">
-                                <div class="px-2.5 py-1.5 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[11px] font-mono">Kiran K. (L2 Tech)</div>
-                                <div class="px-2.5 py-1.5 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[11px] font-mono">Deepa N. (L2 Bill)</div>
-                                <div class="px-2.5 py-1.5 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[11px] font-mono">Manish J. (L2 Auth)</div>
+                            <span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono">Click Any Node</span>
+                        </div>
+
+                        <!-- SVG Hierarchy -->
+                        <div class="py-2 flex items-center justify-center">
+                            <svg id="hasse-svg" viewBox="0 0 540 320" class="w-full max-w-lg h-72">
+                                <defs>
+                                    <marker id="hasse-arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                        <path d="M 0 1 L 10 5 L 0 9 z" fill="#a855f7" />
+                                    </marker>
+                                </defs>
+
+                                <!-- Transitive Reduction Cover Edges (L1 -> L2) -->
+                                <line id="edge-A1-A3" x1="180" y1="270" x2="150" y2="195" class="hasse-link" marker-end="url(#hasse-arrow)"/>
+                                <line id="edge-A1-A4" x1="180" y1="270" x2="270" y2="195" class="hasse-link" marker-end="url(#hasse-arrow)"/>
+                                <line id="edge-A1-A5" x1="180" y1="270" x2="390" y2="195" class="hasse-link" marker-end="url(#hasse-arrow)"/>
+                                <line id="edge-A2-A3" x1="360" y1="270" x2="150" y2="195" class="hasse-link" marker-end="url(#hasse-arrow)"/>
+                                <line id="edge-A2-A4" x1="360" y1="270" x2="270" y2="195" class="hasse-link" marker-end="url(#hasse-arrow)"/>
+                                <line id="edge-A2-A5" x1="360" y1="270" x2="390" y2="195" class="hasse-link" marker-end="url(#hasse-arrow)"/>
+
+                                <!-- Cover Edges (L2 -> L3) -->
+                                <line id="edge-A3-A6" x1="150" y1="185" x2="200" y2="115" class="hasse-link" marker-end="url(#hasse-arrow)"/>
+                                <line id="edge-A5-A6" x1="390" y1="185" x2="200" y2="115" class="hasse-link" marker-end="url(#hasse-arrow)"/>
+                                <line id="edge-A4-A7" x1="270" y1="185" x2="340" y2="115" class="hasse-link" marker-end="url(#hasse-arrow)"/>
+
+                                <!-- Cover Edges (L3 -> Lead) -->
+                                <line id="edge-A6-A8" x1="200" y1="105" x2="270" y2="35" class="hasse-link" marker-end="url(#hasse-arrow)"/>
+                                <line id="edge-A7-A8" x1="340" y1="105" x2="270" y2="35" class="hasse-link" marker-end="url(#hasse-arrow)"/>
+
+                                <!-- Level 4: Top Cover / Supremum -->
+                                <g id="hnode-A8" onclick="inspectHasseNode('A8')" class="hasse-node">
+                                    <rect x="180" y="15" width="180" height="28" rx="8" fill="#1e1b4b" stroke="#f59e0b" stroke-width="2"/>
+                                    <text x="270" y="33" fill="#fde68a" font-size="11" font-family="'Plus Jakarta Sans', sans-serif" font-weight="bold" text-anchor="middle">👑 Venkatesh (Top Cover)</text>
+                                </g>
+
+                                <!-- Level 3: L3 Specialists -->
+                                <g id="hnode-A6" onclick="inspectHasseNode('A6')" class="hasse-node">
+                                    <rect x="120" y="95" width="160" height="26" rx="6" fill="#1e1b4b" stroke="#c084fc" stroke-width="1.8"/>
+                                    <text x="200" y="112" fill="#e9d5ff" font-size="10" font-family="'Plus Jakarta Sans', sans-serif" font-weight="600" text-anchor="middle">Dr. Arvind Sen (L3 Tech)</text>
+                                </g>
+                                <g id="hnode-A7" onclick="inspectHasseNode('A7')" class="hasse-node">
+                                    <rect x="290" y="95" width="160" height="26" rx="6" fill="#1e1b4b" stroke="#c084fc" stroke-width="1.8"/>
+                                    <text x="370" y="112" fill="#e9d5ff" font-size="10" font-family="'Plus Jakarta Sans', sans-serif" font-weight="600" text-anchor="middle">Lakshmi N. (L3 Finance)</text>
+                                </g>
+
+                                <!-- Level 2: L2 Domain Leads -->
+                                <g id="hnode-A3" onclick="inspectHasseNode('A3')" class="hasse-node">
+                                    <rect x="70" y="175" width="125" height="26" rx="6" fill="#0f172a" stroke="#818cf8" stroke-width="1.8"/>
+                                    <text x="132" y="192" fill="#c7d2fe" font-size="10" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Kiran (L2 Tech)</text>
+                                </g>
+                                <g id="hnode-A4" onclick="inspectHasseNode('A4')" class="hasse-node">
+                                    <rect x="210" y="175" width="125" height="26" rx="6" fill="#0f172a" stroke="#818cf8" stroke-width="1.8"/>
+                                    <text x="272" y="192" fill="#c7d2fe" font-size="10" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Deepa (L2 Bill)</text>
+                                </g>
+                                <g id="hnode-A5" onclick="inspectHasseNode('A5')" class="hasse-node">
+                                    <rect x="350" y="175" width="125" height="26" rx="6" fill="#0f172a" stroke="#818cf8" stroke-width="1.8"/>
+                                    <text x="412" y="192" fill="#c7d2fe" font-size="10" font-family="'Plus Jakarta Sans', sans-serif" text-anchor="middle">Manish (L2 Auth)</text>
+                                </g>
+
+                                <!-- Level 1: L1 Frontline Triage -->
+                                <g id="hnode-A1" onclick="inspectHasseNode('A1')" class="hasse-node">
+                                    <rect x="100" y="255" width="160" height="28" rx="6" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+                                    <text x="180" y="273" fill="#bae6fd" font-size="10.5" font-family="'Plus Jakarta Sans', sans-serif" font-weight="600" text-anchor="middle">Ramesh Patel (L1)</text>
+                                </g>
+                                <g id="hnode-A2" onclick="inspectHasseNode('A2')" class="hasse-node">
+                                    <rect x="280" y="255" width="160" height="28" rx="6" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+                                    <text x="360" y="273" fill="#bae6fd" font-size="10.5" font-family="'Plus Jakarta Sans', sans-serif" font-weight="600" text-anchor="middle">Sneha Kulkarni (L1)</text>
+                                </g>
+                            </svg>
+                        </div>
+
+                        <!-- Poset Cone Inspector -->
+                        <div id="hasse-inspector-box" class="mt-2 p-3 bg-slate-900/90 rounded-lg border border-slate-800 text-[11px] font-mono text-slate-300">
+                            <div class="text-amber-400 font-bold flex items-center justify-between">
+                                <span id="hasse-agent-title">👑 Venkatesh Iyer (Specialist Lead)</span>
+                                <span class="text-[10px] text-purple-400">Maximal Element &top;</span>
                             </div>
-                            <div class="text-slate-500 font-mono text-sm">↑</div>
-                            <div class="px-4 py-1.5 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/40 text-xs font-mono font-bold">Ramesh Patel &amp; Sneha Kulkarni (L1 Frontline Triage)</div>
+                            <div class="mt-1 text-slate-400">
+                                <span class="text-emerald-400">Predecessors (Ideal &downarrow;):</span> All L1, L2, L3 agents escalate upward to this supremum node.
+                            </div>
+                            <div class="mt-0.5 text-slate-400">
+                                <span class="text-cyan-400">Antisymmetry Guaranteed:</span> No backward edge exists &rArr; Zero circular deadlocks.
+                            </div>
                         </div>
                     </div>
 
-                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
-                        <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider mb-2">Ticket Equivalence Classes: [Ti] ~ [Tj]</h4>
-                        <p class="text-xs text-slate-400 mb-3">Two tickets belong to the same equivalence class if and only if Category(Ti) == Category(Tj). Proves disjoint union partitions:</p>
-                        <div class="space-y-2 text-xs font-mono">
-                            <div class="p-2 rounded bg-slate-900 border border-slate-800 flex justify-between"><span class="text-indigo-400">[Technical] = { T1, T7, T16, T18, T23 }</span><span class="text-slate-500">Queue: Kiran K.</span></div>
-                            <div class="p-2 rounded bg-slate-900 border border-slate-800 flex justify-between"><span class="text-emerald-400">[Billing] = { T2, T6, T11, T14 }</span><span class="text-slate-500">Queue: Deepa N.</span></div>
-                            <div class="p-2 rounded bg-slate-900 border border-slate-800 flex justify-between"><span class="text-purple-400">[Auth_Access] = { T3, T31, T34, T40 }</span><span class="text-slate-500">Queue: Manish J.</span></div>
-                            <div class="p-2 rounded bg-slate-900 border border-slate-800 flex justify-between"><span class="text-amber-400">[Bug_Report] = { T4, T43, T47, T50 }</span><span class="text-slate-500">Queue: L1/L2 QA</span></div>
+                    <!-- Equivalence Classes Partitioning Explorer -->
+                    <div class="lg:col-span-5 bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between pb-2 border-b border-slate-800/80">
+                                <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider">Ticket Equivalence Classes</h4>
+                                <span class="text-[10px] text-emerald-400 font-mono">Disjoint Partitions</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                                Relation: <span class="font-mono text-cyan-300">T<sub>i</sub> ~ T<sub>j</sub> &hArr; Category(T<sub>i</sub>) == Category(T<sub>j</sub>)</span>. Proves every ticket belongs to exactly one disjoint category partition:
+                            </p>
+
+                            <!-- Filter Selector -->
+                            <div class="flex flex-wrap gap-1.5 mt-3">
+                                <button onclick="filterEquivClass('all')" id="btn-eq-all" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white text-[11px] font-mono">All (92)</button>
+                                <button onclick="filterEquivClass('Technical')" id="btn-eq-Technical" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-indigo-300 border border-slate-800 text-[11px] font-mono">Technical (32)</button>
+                                <button onclick="filterEquivClass('Billing')" id="btn-eq-Billing" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-emerald-300 border border-slate-800 text-[11px] font-mono">Billing (22)</button>
+                                <button onclick="filterEquivClass('Auth_Access')" id="btn-eq-Auth_Access" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-purple-300 border border-slate-800 text-[11px] font-mono">Auth (20)</button>
+                                <button onclick="filterEquivClass('Bug_Report')" id="btn-eq-Bug_Report" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-amber-300 border border-slate-800 text-[11px] font-mono">Bugs (18)</button>
+                            </div>
+
+                            <!-- Interactive Ticket Badges -->
+                            <div id="equiv-tickets-display" class="mt-4 p-3 bg-slate-900/80 rounded-xl border border-slate-800/80 max-h-48 overflow-y-auto space-y-1.5">
+                                <div class="text-[11px] font-mono text-indigo-400 font-bold">[Technical] = { #1001, #1005, #1008, #1012, #1019, #1024, #1031 }</div>
+                                <div class="text-[11px] font-mono text-emerald-400 font-bold">[Billing] = { #1002, #1006, #1011, #1015, #1021, #1028 }</div>
+                                <div class="text-[11px] font-mono text-purple-400 font-bold">[Auth_Access] = { #1003, #1007, #1014, #1020, #1027, #1034 }</div>
+                                <div class="text-[11px] font-mono text-amber-400 font-bold">[Bug_Report] = { #1004, #1009, #1016, #1023, #1030, #1038 }</div>
+                            </div>
+                        </div>
+
+                        <!-- Formal Proof Footer -->
+                        <div class="mt-4 pt-3 border-t border-slate-800/80 text-[11px] font-mono text-slate-400 space-y-1">
+                            <div class="flex justify-between">
+                                <span>Pairwise Disjoint:</span>
+                                <span class="text-emerald-400">&forall; i&ne;j, [T<sub>i</sub>] &cap; [T<sub>j</sub>] = &empty; &check;</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Exhaustive Union:</span>
+                                <span class="text-emerald-400">&cup; [T<sub>i</sub>] = S (100% of tickets) &check;</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1473,23 +1724,110 @@ public class TechnicalLeadAgent extends Agent {
             }
         };
 
-        function inspectFlowStep(stepNum) {
-            const info = flowStepInfo[stepNum];
-            document.querySelectorAll('.flow-node').forEach(el => el.classList.remove('active-step'));
-            document.getElementById(`flow-step-${stepNum}`).classList.add('active-step');
+        // Flowchart Interactive Player State
+        const flowState = {
+            currentStep: 1,
+            isPlaying: false,
+            timer: null,
+            speed: 900
+        };
 
-            document.getElementById('flow-detail-title').innerHTML = `<i class="fa-solid fa-circle-info mr-1"></i>${info.title}`;
+        function inspectFlowStep(stepNum) {
+            flowState.currentStep = stepNum;
+            const info = flowStepInfo[stepNum];
+
+            // 1. Update node classes
+            for (let i = 1; i <= 7; i++) {
+                const node = document.getElementById(`flow-step-${i}`);
+                if (!node) continue;
+                node.classList.remove('active-step', 'visited-step');
+                if (i === stepNum) {
+                    node.classList.add('active-step');
+                } else if (i < stepNum) {
+                    node.classList.add('visited-step');
+                }
+            }
+
+            // 2. Update connector arrows
+            for (let i = 1; i <= 6; i++) {
+                const conn = document.getElementById(`flow-conn-${i}`);
+                if (!conn) continue;
+                if (i < stepNum) {
+                    conn.className = 'flow-connector active p-1 rotate-90 lg:rotate-0';
+                } else {
+                    conn.className = 'flow-connector p-1 text-slate-600 rotate-90 lg:rotate-0';
+                }
+            }
+
+            // 3. Update progress bar & track
+            const pct = Math.round((stepNum / 7) * 100);
+            const pBar = document.getElementById('flow-progress-bar');
+            if (pBar) pBar.style.width = `${pct}%`;
+            const pText = document.getElementById('flow-pct-text');
+            if (pText) pText.innerText = `${pct}% Complete`;
+            const pStatus = document.getElementById('flow-status-text');
+            if (pStatus) pStatus.innerText = `Stage ${stepNum} of 7 • ${info.title.split(': ')[1]} (${info.subject})`;
+
+            // 4. Update deep dive panel
+            document.getElementById('flow-detail-title').innerHTML = `<i class="fa-solid fa-circle-info mr-1 text-emerald-400"></i>${info.title}`;
             document.getElementById('flow-detail-subject').innerText = info.subject;
             document.getElementById('flow-detail-desc').innerText = info.desc;
             document.getElementById('flow-detail-code').innerText = info.code;
         }
 
-        async function animateFlowchartExecution() {
-            for (let i = 1; i <= 7; i++) {
-                inspectFlowStep(i);
-                await new Promise(r => setTimeout(r, 650));
+        function stepFlowchart(delta) {
+            let next = flowState.currentStep + delta;
+            if (next > 7) next = 1;
+            if (next < 1) next = 7;
+            inspectFlowStep(next);
+        }
+
+        function resetFlowchart() {
+            if (flowState.isPlaying) toggleFlowchartAutoPlay();
+            inspectFlowStep(1);
+            showToast('Flowchart Reset', 'Returned to Stage 1: Customer Intake.');
+        }
+
+        function setFlowSpeed(val) {
+            flowState.speed = parseInt(val, 10);
+            if (flowState.isPlaying) {
+                clearInterval(flowState.timer);
+                flowState.timer = setInterval(autoPlayStep, flowState.speed);
             }
-            showToast('Flowchart Traversal Completed', 'Executed complete 7-stage SaaS escalation lifecycle.');
+        }
+
+        function toggleFlowchartAutoPlay() {
+            flowState.isPlaying = !flowState.isPlaying;
+            const btn = document.getElementById('flow-btn-play');
+            const icon = document.getElementById('flow-play-icon');
+            const text = document.getElementById('flow-play-text');
+
+            if (flowState.isPlaying) {
+                if (icon) icon.className = 'fa-solid fa-pause';
+                if (text) text.innerText = 'Pause';
+                if (btn) btn.className = 'px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold transition flex items-center space-x-1.5 shadow-md shadow-amber-600/30';
+                flowState.timer = setInterval(autoPlayStep, flowState.speed);
+                showToast('Auto-Play Started', 'Watching complaints navigate all 7 stages.');
+            } else {
+                if (icon) icon.className = 'fa-solid fa-play';
+                if (text) text.innerText = 'Auto-Play';
+                if (btn) btn.className = 'px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition flex items-center space-x-1.5 shadow-md shadow-emerald-600/30';
+                clearInterval(flowState.timer);
+                flowState.timer = null;
+            }
+        }
+
+        function autoPlayStep() {
+            let next = flowState.currentStep + 1;
+            if (next > 7) {
+                next = 1;
+            }
+            inspectFlowStep(next);
+        }
+
+        function animateFlowchartExecution() {
+            switchTab('flowchart');
+            if (!flowState.isPlaying) toggleFlowchartAutoPlay();
         }
 
         function congestAgent(agentId) {
@@ -1527,6 +1865,13 @@ public class TechnicalLeadAgent extends Agent {
             showToast('Workloads Reset', 'Restored normal queue distributions.');
         }
 
+        // ==========================================
+        // ADSA GRAPH CANVAS & ANIMATED PARTICLE ENGINE
+        // ==========================================
+        let adsaAnimId = null;
+        let particleProgress = 0;
+        let hoveredNodeId = null;
+
         function initAdsaCanvas() {
             const canvas = document.getElementById('adsaGraphCanvas');
             if (!canvas) return;
@@ -1538,14 +1883,62 @@ public class TechnicalLeadAgent extends Agent {
             canvas.height = rect.height * dpr;
             ctx.scale(dpr, dpr);
 
-            drawGraph(ctx, rect.width, rect.height);
+            if (!canvas._listenersAttached) {
+                canvas.addEventListener('mousemove', (e) => {
+                    const r = canvas.getBoundingClientRect();
+                    const mx = e.clientX - r.left;
+                    const my = e.clientY - r.top;
+                    checkNodeHover(mx, my, r.width, r.height);
+                });
+                canvas.addEventListener('click', (e) => {
+                    if (hoveredNodeId) {
+                        const a = state.agents[hoveredNodeId];
+                        showToast(`Agent: ${a.name}`, `Tier: ${a.tier} | Spec: ${a.spec} | Workload: ${a.load}/${a.max}`);
+                    }
+                });
+                canvas._listenersAttached = true;
+            }
+
+            if (!adsaAnimId) {
+                adsaAnimationLoop();
+            }
+        }
+
+        function checkNodeHover(mx, my, w, h) {
+            const scaleX = w / 680;
+            const scaleY = h / 380;
+            hoveredNodeId = null;
+
+            for (const node of state.graph.nodes) {
+                const nx = node.x * scaleX;
+                const ny = node.y * scaleY;
+                const dist = Math.hypot(mx - nx, my - ny);
+                if (dist <= 22) {
+                    hoveredNodeId = node.id;
+                    break;
+                }
+            }
+            const canvas = document.getElementById('adsaGraphCanvas');
+            if (canvas) canvas.style.cursor = hoveredNodeId ? 'pointer' : 'default';
+        }
+
+        function adsaAnimationLoop() {
+            const canvas = document.getElementById('adsaGraphCanvas');
+            if (canvas && state.activeTab === 'adsa') {
+                const ctx = canvas.getContext('2d');
+                const rect = canvas.getBoundingClientRect();
+                drawGraph(ctx, rect.width, rect.height);
+            }
+            adsaAnimId = requestAnimationFrame(adsaAnimationLoop);
         }
 
         function drawGraph(ctx, w, h) {
             ctx.clearRect(0, 0, w, h);
             const scaleX = w / 680;
             const scaleY = h / 380;
+            const now = Date.now();
 
+            // 1. Draw Edges
             state.graph.edges.forEach(edge => {
                 const u = state.graph.nodes.find(n => n.id === edge.from);
                 const v = state.graph.nodes.find(n => n.id === edge.to);
@@ -1554,38 +1947,109 @@ public class TechnicalLeadAgent extends Agent {
                 ctx.beginPath();
                 ctx.moveTo(u.x * scaleX, u.y * scaleY);
                 ctx.lineTo(v.x * scaleX, v.y * scaleY);
-                ctx.strokeStyle = isActive ? '#10b981' : 'rgba(148, 163, 184, 0.2)';
-                ctx.lineWidth = isActive ? 3.5 : 1.5;
-                ctx.stroke();
 
+                if (isActive) {
+                    ctx.strokeStyle = '#10b981';
+                    ctx.lineWidth = 3.5;
+                    ctx.shadowColor = '#10b981';
+                    ctx.shadowBlur = 10;
+                } else {
+                    ctx.strokeStyle = 'rgba(148, 163, 184, 0.22)';
+                    ctx.lineWidth = 1.5;
+                    ctx.shadowBlur = 0;
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // Edge weight label
                 const midX = ((u.x + v.x) / 2) * scaleX;
                 const midY = ((u.y + v.y) / 2) * scaleY;
                 ctx.fillStyle = isActive ? '#10b981' : '#64748b';
                 ctx.font = '10px "JetBrains Mono"';
+                ctx.textAlign = 'center';
                 ctx.fillText(`${edge.weight}m`, midX, midY - 4);
             });
 
+            // 2. Draw Traveling Particle Packet along Shortest Path
+            const path = state.graph.activePath;
+            if (path && path.length >= 2) {
+                particleProgress += 0.012;
+                if (particleProgress >= path.length - 1) {
+                    particleProgress = 0;
+                }
+                const segIdx = Math.floor(particleProgress);
+                const segT = particleProgress - segIdx;
+                const nodeU = state.graph.nodes.find(n => n.id === path[segIdx]);
+                const nodeV = state.graph.nodes.find(n => n.id === path[segIdx + 1]);
+
+                if (nodeU && nodeV) {
+                    const px = (nodeU.x + (nodeV.x - nodeU.x) * segT) * scaleX;
+                    const py = (nodeU.y + (nodeV.y - nodeU.y) * segT) * scaleY;
+
+                    // Glowing packet comet
+                    ctx.beginPath();
+                    ctx.arc(px, py, 5.5, 0, 2 * Math.PI);
+                    ctx.fillStyle = '#06b6d4';
+                    ctx.shadowColor = '#06b6d4';
+                    ctx.shadowBlur = 14;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    // Small trailing light
+                    ctx.beginPath();
+                    ctx.arc(px, py, 2.5, 0, 2 * Math.PI);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fill();
+                }
+            }
+
+            // 3. Draw Nodes with Capacity Gauges & Glows
             state.graph.nodes.forEach(node => {
-                const isPath = state.graph.activePath.includes(node.id);
+                const isPath = path.includes(node.id);
+                const isHovered = (hoveredNodeId === node.id);
                 const nx = node.x * scaleX;
                 const ny = node.y * scaleY;
+                const a = state.agents[node.id];
+                const loadRatio = a ? (a.load / a.max) : 0.2;
 
+                // Pulsing outer halo for active route nodes
+                if (isPath) {
+                    const pulseRadius = 20 + Math.sin(now / 220) * 3;
+                    ctx.beginPath();
+                    ctx.arc(nx, ny, pulseRadius, 0, 2 * Math.PI);
+                    ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                // Node Body
                 ctx.beginPath();
                 ctx.arc(nx, ny, 16, 0, 2 * Math.PI);
-                ctx.fillStyle = '#0f172a';
+                ctx.fillStyle = isHovered ? '#1e293b' : '#0f172a';
                 ctx.fill();
-                ctx.strokeStyle = isPath ? '#10b981' : (node.tier === 1 ? '#38bdf8' : (node.tier === 2 ? '#818cf8' : '#c084fc'));
-                ctx.lineWidth = isPath ? 3 : 2;
+
+                // Dynamic Load Capacity Arc (Green -> Amber -> Red)
+                const arcColor = loadRatio >= 0.8 ? '#f43f5e' : (loadRatio >= 0.5 ? '#f59e0b' : '#10b981');
+                ctx.beginPath();
+                ctx.arc(nx, ny, 18, -Math.PI / 2, -Math.PI / 2 + (2 * Math.PI * Math.min(1, loadRatio)));
+                ctx.strokeStyle = arcColor;
+                ctx.lineWidth = 2.5;
                 ctx.stroke();
 
-                ctx.fillStyle = '#ffffff';
+                // Node Center Text
+                ctx.fillStyle = isPath ? '#10b981' : '#ffffff';
                 ctx.font = 'bold 10px "Plus Jakarta Sans"';
                 ctx.textAlign = 'center';
-                ctx.fillText(node.id, nx, ny + 3);
+                ctx.fillText(node.id, nx, ny + 3.5);
 
+                // Agent First Name & Workload Pill
                 ctx.fillStyle = '#cbd5e1';
                 ctx.font = '10px "Plus Jakarta Sans"';
                 ctx.fillText(node.name.split(' ')[0], nx, ny + 28);
+
+                ctx.fillStyle = loadRatio >= 0.8 ? '#fda4af' : '#94a3b8';
+                ctx.font = '9px "JetBrains Mono"';
+                ctx.fillText(`${a ? a.load : 1}/${a ? a.max : 8}`, nx, ny + 39);
             });
 
             updateDijkstraTraceTable();
@@ -1618,6 +2082,7 @@ public class TechnicalLeadAgent extends Agent {
             } else {
                 state.graph.activePath = ['A1', 'A3'];
             }
+            particleProgress = 0;
             initAdsaCanvas();
             showToast('Dijkstra Recalculated', `Calculated optimal path: ${state.graph.activePath.join(' → ')}`);
         }
@@ -1625,8 +2090,100 @@ public class TechnicalLeadAgent extends Agent {
         function resetGraphState() {
             resetAllAgentLoads();
             state.graph.activePath = ['A1', 'A3'];
+            particleProgress = 0;
             initAdsaCanvas();
             showToast('Weights Reset', 'Restored default topology weights.');
+        }
+
+        // ==========================================
+        // DMGT HASSE DIAGRAM & EQUIVALENCE CLASSES
+        // ==========================================
+        const hasseNodeInfo = {
+            'A8': { title: '👑 Venkatesh Iyer (Specialist Lead)', desc: 'Maximal element (Supremum ⊤). Can receive escalations from all L1, L2, L3 agents. Holds terminal resolution authority.' },
+            'A6': { title: 'Dr. Arvind Sen (L3 Technical)', desc: 'Upper bound for Kiran Kumar (L2 Tech) and Manish Joshi (L2 Auth). Escalates solely to Venkatesh Iyer.' },
+            'A7': { title: 'Lakshmi Narayanan (L3 Finance)', desc: 'Upper bound for Deepa Nair (L2 Billing). Escalates exclusively to Venkatesh Iyer for wire transfers > $50k.' },
+            'A3': { title: 'Kiran Kumar (L2 Technical)', desc: 'Predecessor is L1 Triage. Upper cover element is Dr. Arvind Sen (L3 Tech). Verified Antisymmetric.' },
+            'A4': { title: 'Deepa Nair (L2 Billing)', desc: 'Predecessor is L1 Triage. Upper cover element is Lakshmi Narayanan (L3 Finance). Verified Antisymmetric.' },
+            'A5': { title: 'Manish Joshi (L2 Security/Auth)', desc: 'Predecessor is L1 Triage. Upper cover element is Dr. Arvind Sen (L3 Tech). Verified Antisymmetric.' },
+            'A1': { title: 'Ramesh Patel (L1 Triage)', desc: 'Minimal element (Infimum ⊥). First point of contact. Transitively reaches all upper tiers (L1 ≤ L2 ≤ L3 ≤ Lead).' },
+            'A2': { title: 'Sneha Kulkarni (L1 Triage)', desc: 'Minimal element (Infimum ⊥). Customer success lead. Transitively reaches all upper tiers.' }
+        };
+
+        function inspectHasseNode(agentId) {
+            const info = hasseNodeInfo[agentId];
+            if (!info) return;
+
+            // Highlight links in SVG
+            document.querySelectorAll('.hasse-link').forEach(l => l.classList.remove('highlighted'));
+            document.querySelectorAll(`[id*="${agentId}"]`).forEach(el => {
+                if (el.classList.contains('hasse-link')) el.classList.add('highlighted');
+            });
+
+            const box = document.getElementById('hasse-inspector-box');
+            if (box) {
+                box.innerHTML = `
+                    <div class="text-amber-400 font-bold flex items-center justify-between">
+                        <span>${info.title}</span>
+                        <span class="text-[10px] text-purple-400">Poset Node Verified</span>
+                    </div>
+                    <div class="mt-1 text-slate-300">${info.desc}</div>
+                    <div class="mt-1 text-cyan-400 font-mono text-[10px]">&bull; Reflexivity: (${agentId}, ${agentId}) &in; R &bull; Antisymmetry: No circular deadlocks</div>
+                `;
+            }
+            showToast('Poset Hierarchy Inspected', info.title);
+        }
+
+        const equivPartitionData = {
+            'all': [
+                '<div class="text-[11px] font-mono text-indigo-400 font-bold">[Technical] = { #1001, #1005, #1008, #1012, #1019, #1024, #1031 }</div>',
+                '<div class="text-[11px] font-mono text-emerald-400 font-bold">[Billing] = { #1002, #1006, #1011, #1015, #1021, #1028 }</div>',
+                '<div class="text-[11px] font-mono text-purple-400 font-bold">[Auth_Access] = { #1003, #1007, #1014, #1020, #1027, #1034 }</div>',
+                '<div class="text-[11px] font-mono text-amber-400 font-bold">[Bug_Report] = { #1004, #1009, #1016, #1023, #1030, #1038 }</div>'
+            ],
+            'Technical': [
+                '<div class="text-[11px] font-mono text-indigo-400 font-bold">[Technical Partition &bull; 32 Tickets Assigned to Kiran K.]</div>',
+                '<div class="text-[11px] text-slate-300 font-mono mt-1">&bull; #1001: PostgreSQL connection pool exhausted (Critical)</div>',
+                '<div class="text-[11px] text-slate-300 font-mono">&bull; #1005: Redis replica desynchronization lag (High)</div>',
+                '<div class="text-[11px] text-slate-300 font-mono">&bull; #1008: Kubernetes OOMKilled worker container (High)</div>',
+                '<div class="text-[11px] text-slate-300 font-mono">&bull; #1012: Kafka partition consumer rebalance deadlock (Critical)</div>'
+            ],
+            'Billing': [
+                '<div class="text-[11px] font-mono text-emerald-400 font-bold">[Billing Partition &bull; 22 Tickets Assigned to Deepa N.]</div>',
+                '<div class="text-[11px] text-slate-300 font-mono mt-1">&bull; #1002: Stripe double credit card billing on invoice (High)</div>',
+                '<div class="text-[11px] text-slate-300 font-mono">&bull; #1006: EU VAT reverse charge tax calculation error (Medium)</div>',
+                '<div class="text-[11px] text-slate-300 font-mono">&bull; #1011: Subscription auto-downgrade webhook failure (High)</div>'
+            ],
+            'Auth_Access': [
+                '<div class="text-[11px] font-mono text-purple-400 font-bold">[Auth_Access Partition &bull; 20 Tickets Assigned to Manish J.]</div>',
+                '<div class="text-[11px] text-slate-300 font-mono mt-1">&bull; #1003: Okta SAML 2.0 signature expired loop (High)</div>',
+                '<div class="text-[11px] text-slate-300 font-mono">&bull; #1007: Google Workspace OAuth redirect URI mismatch (Medium)</div>',
+                '<div class="text-[11px] text-slate-300 font-mono">&bull; #1014: FIDO2 WebAuthn hardware security key 2FA timeout (High)</div>'
+            ],
+            'Bug_Report': [
+                '<div class="text-[11px] font-mono text-amber-400 font-bold">[Bug_Report Partition &bull; 18 Tickets Assigned to L1/L2 QA]</div>',
+                '<div class="text-[11px] text-slate-300 font-mono mt-1">&bull; #1004: CSV export button freeze on >50k rows (Medium)</div>',
+                '<div class="text-[11px] text-slate-300 font-mono">&bull; #1009: Safari table sticky header z-index glitch (Low)</div>',
+                '<div class="text-[11px] text-slate-300 font-mono">&bull; #1016: Datepicker timezone offset UTC shift (Medium)</div>'
+            ]
+        };
+
+        function filterEquivClass(cat) {
+            ['all', 'Technical', 'Billing', 'Auth_Access', 'Bug_Report'].forEach(c => {
+                const btn = document.getElementById(`btn-eq-${c}`);
+                if (btn) {
+                    if (c === cat) {
+                        btn.className = 'px-2.5 py-1 rounded-lg bg-indigo-600 text-white text-[11px] font-mono shadow-md shadow-indigo-600/30';
+                    } else {
+                        btn.className = 'px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-[11px] font-mono';
+                    }
+                }
+            });
+
+            const display = document.getElementById('equiv-tickets-display');
+            if (display && equivPartitionData[cat]) {
+                display.innerHTML = equivPartitionData[cat].join('');
+            }
+            showToast('Equivalence Partition Filtered', `Category: ${cat}`);
         }
 
         const relationalMockData = {
