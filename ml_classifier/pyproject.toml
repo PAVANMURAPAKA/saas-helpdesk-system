@@ -1,0 +1,2 @@
+[tool.vercel]
+entrypoint = "classifier_api:app"
