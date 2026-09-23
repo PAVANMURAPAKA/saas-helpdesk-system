@@ -1,0 +1,93 @@
+ticket_id,text,category,urgency
+1,"My credit card was charged twice for the monthly Pro subscription plan",Billing,High
+2,"Can you provide a VAT tax invoice for our finance department audit?",Billing,Medium
+3,"Payment failed through Stripe checkout but money was debited from bank account",Billing,High
+4,"We want to upgrade from Pro to Enterprise tier and need custom billing invoice",Billing,Low
+5,"Requesting full refund due to unexpected annual auto-renewal charge",Billing,High
+6,"Credit card expired and need to update billing information securely",Billing,Medium
+7,"Overcharged for API seat expansion that we downgraded last week",Billing,High
+8,"Need to change the currency on our subscription from USD to EUR",Billing,Low
+9,"Payment gateway returning transaction error code 4002 during checkout",Billing,High
+10,"Our company requires net-30 wire transfer terms for Enterprise renewal",Billing,Low
+11,"Unrecognized debit of $299 on corporate credit card under your merchant name",Billing,Critical
+12,"Discount promotional coupon code was not applied to our checkout order",Billing,Low
+13,"Receipt and statement for annual cloud subscription not received via email",Billing,Medium
+14,"Chargeback dispute filed accidentally by our accounts department, need resolution",Billing,Critical
+15,"How do I view payment transaction history and download past invoices?",Billing,Low
+16,"Subscription cancelled but billing charge continues to show on statement",Billing,High
+17,"Requesting price quotation for 50 additional user licenses and volume discount",Billing,Low
+18,"Bank payment remittance advice and tax withholding certificate submission",Billing,Low
+19,"Stripe payment intent failed with insufficient funds error message",Billing,Medium
+20,"Prorated credit for service downtime during last month SLA breach",Billing,High
+21,"Need GST invoice with company tax registration number updated",Billing,Medium
+22,"Recurring billing cycle date change from first of month to 15th",Billing,Low
+23,"Production server returning 500 internal server error on all API requests",Technical,Critical
+24,"Kubernetes microservice pod crashing with OutOfMemory error during peak hours",Technical,Critical
+25,"Database connection pool exhausted and throwing JDBC socket timeout exceptions",Technical,Critical
+26,"Webhook event delivery failing with 504 Gateway Timeout to our listener endpoint",Technical,High
+27,"High latency and 15 second query execution time on GraphQL analytics endpoint",Technical,High
+28,"SSL TLS certificate expired on our custom domain cname causing HTTPS security warnings",Technical,Critical
+29,"Redis cache connection dropped causing session invalidation across user clusters",Technical,High
+30,"API rate limiting triggered prematurely below our Enterprise SLA quota tier",Technical,High
+31,"WebSocket connection continuously disconnecting every 30 seconds",Technical,Medium
+32,"Elasticsearch indexing queue blocked causing search queries to return stale data",Technical,High
+33,"Background worker job worker queue backed up with 50000 unprocessed events",Technical,High
+34,"REST API payload returning null values for nested JSON customer profile fields",Technical,Medium
+35,"CORS error blocking cross-origin requests from our staging web application",Technical,Medium
+36,"Memory leak detected in node js backend process after latest deployment",Technical,Critical
+37,"DNS propagation delay or failing to resolve tenant subdomains",Technical,High
+38,"PostgreSQL query deadlocks on high concurrency transaction writes",Technical,Critical
+39,"Kafka consumer lag growing rapidly on telemetry message topic",Technical,High
+40,"Server CPU spike 100 percent utilization causing request throttling",Technical,Critical
+41,"Failed health checks causing AWS load balancer 502 bad gateway",Technical,Critical
+42,"Microservice gRPC communication deadline exceeded error",Technical,High
+43,"Unable to login with two factor authentication OTP code not being received",Auth_Access,High
+44,"SAML SSO integration failing with Okta assertion signature verification error",Auth_Access,Critical
+45,"User locked out after exceeding password attempt threshold, please unlock account",Auth_Access,Medium
+46,"Password reset email link is expiring immediately or giving invalid token error",Auth_Access,High
+47,"Google OAuth login redirects back to login page without signing user in",Auth_Access,High
+48,"Role Based Access Control RBAC permission denied when admin accesses audit logs",Auth_Access,High
+49,"Lost access to Google Authenticator TOTP device and need MFA bypass backup",Auth_Access,Critical
+50,"JWT authorization bearer token expiring too quickly causing frequent logouts",Auth_Access,Medium
+51,"Cannot remove deactivated employee from organization workspace admin privileges",Auth_Access,High
+52,"Single sign-on Azure Active Directory authentication looping infinitely",Auth_Access,Critical
+53,"Session timeout not working according to enterprise security policy duration",Auth_Access,Medium
+54,"API key authentication returning 401 unauthorized despite valid bearer header",Auth_Access,High
+55,"Active Directory LDAP sync synchronization failed for user directory",Auth_Access,High
+56,"Multi-factor SMS verification code not delivered to international phone number",Auth_Access,High
+57,"Admin cannot assign manager permissions to newly joined team lead",Auth_Access,Medium
+58,"OAuth2 refresh token revoked unexpectedly before expiration period",Auth_Access,High
+59,"User account disabled by security system after suspicious IP login attempt",Auth_Access,High
+60,"Identity provider SAML certificate expiration update required",Auth_Access,Critical
+61,"Export to CSV button completely unresponsive and not downloading file",Bug_Report,Medium
+62,"Data visualization chart shows incorrect dates on x-axis due to timezone offset",Bug_Report,Medium
+63,"Modal dialog box freezes and cannot be closed without refreshing browser page",Bug_Report,High
+64,"Dark mode toggle causes table font colors to turn invisible on white background",Bug_Report,Low
+65,"Search filter dropdown disappears when clicking pagination page 2",Bug_Report,Medium
+66,"Mobile responsive view cuts off action buttons on Android and iOS screens",Bug_Report,Low
+67,"Form submission clears all entered input fields without saving changes",Bug_Report,High
+68,"Dashboard analytics widget renders blank white screen with Javascript console error",Bug_Report,High
+69,"Notifications bell icon counter badge does not decrement after reading alerts",Bug_Report,Low
+70,"Drag and drop kanban board cards snap back to original column on drop",Bug_Report,Medium
+71,"Profile picture image upload fails with uncaught client side exception",Bug_Report,Low
+72,"Rich text editor removes HTML formatting and bullet points upon saving document",Bug_Report,Medium
+73,"Table sorting by column header reverses descending order on second click",Bug_Report,Low
+74,"Typo and misaligned text label on customer settings tab",Bug_Report,Low
+75,"Sidebar navigation menu overlaps with main page content on resize",Bug_Report,Medium
+76,"File attachment drag drop zone flickers and rejects PDF uploads",Bug_Report,Medium
+77,"Print preview stylesheet missing stylesheets causing broken print format",Bug_Report,Low
+78,"Color picker component crashes web page when selecting custom hex code",Bug_Report,Medium
+79,"How do I invite secondary teammates and collaborate in shared project workspaces?",General,Low
+80,"Where can I find the official API documentation and SDK integration samples?",General,Low
+81,"Can you provide information on your SOC2 Type II compliance and data privacy policy?",General,Low
+82,"What are your live customer support working hours and SLA response times?",General,Low
+83,"Requesting demo walk-through of new automated workflow builder features",General,Low
+84,"Is there a public roadmap where we can upvote upcoming feature integrations?",General,Low
+85,"How to change the default language and locale settings across the organization?",General,Low
+86,"We want to transfer account ownership from current founder to operations director",General,Medium
+87,"Where can we review the Master Service Agreement and Terms of Service?",General,Low
+88,"Inquiry about scheduling onboarding training webinar for 20 new employees",General,Low
+89,"Can our company subscribe to product release notes and newsletter updates?",General,Low
+90,"Looking for information on your security bug bounty vulnerability program",General,Low
+91,"How to export all company workspace knowledge base articles for backup",General,Low
+92,"General feedback regarding new user interface layout and experience",General,Low

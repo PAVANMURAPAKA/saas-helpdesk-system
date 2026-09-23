@@ -1,0 +1,59 @@
+{
+    "model_architecture": "CalibratedLinearSVC",
+    "feature_extraction": "TF-IDF Vectorizer (ngram_range=(1,2), sublinear_tf=True)",
+    "total_training_records": 92,
+    "classes": [
+        "Auth_Access",
+        "Billing",
+        "Bug_Report",
+        "General",
+        "Technical"
+    ],
+    "cross_val_accuracy_mean": 0.6181,
+    "test_accuracy": 0.6842,
+    "classification_report": {
+        "Auth_Access": {
+            "precision": 1.0,
+            "recall": 0.5,
+            "f1-score": 0.6666666666666666,
+            "support": 4.0
+        },
+        "Billing": {
+            "precision": 0.5714285714285714,
+            "recall": 1.0,
+            "f1-score": 0.7272727272727273,
+            "support": 4.0
+        },
+        "Bug_Report": {
+            "precision": 0.75,
+            "recall": 0.75,
+            "f1-score": 0.75,
+            "support": 4.0
+        },
+        "General": {
+            "precision": 0.5,
+            "recall": 0.3333333333333333,
+            "f1-score": 0.4,
+            "support": 3.0
+        },
+        "Technical": {
+            "precision": 0.75,
+            "recall": 0.75,
+            "f1-score": 0.75,
+            "support": 4.0
+        },
+        "accuracy": 0.6842105263157895,
+        "macro avg": {
+            "precision": 0.7142857142857142,
+            "recall": 0.6666666666666667,
+            "f1-score": 0.6587878787878788,
+            "support": 19.0
+        },
+        "weighted avg": {
+            "precision": 0.7255639097744361,
+            "recall": 0.6842105263157895,
+            "f1-score": 0.6724082934609251,
+            "support": 19.0
+        }
+    }
+}

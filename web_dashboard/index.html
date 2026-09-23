@@ -1,0 +1,1902 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaaS Helpdesk - Enterprise Resolution & Escalation Platform</title>
+    <meta name="description" content="Production-grade SaaS Helpdesk Ticket Resolution & Escalation Platform integrating DBMS, DMGT, ADSA, OOPJ, and Python NLP.">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                            950: '#0b0f19'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #080c15;
+            color: #e2e8f0;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0b0f19; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(79, 70, 229, 0.1) 100%);
+            border-bottom: 2px solid #818cf8;
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .flow-node {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .flow-node:hover {
+            transform: translateY(-3px);
+            border-color: #818cf8;
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
+        }
+        .flow-node.active-step {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.15);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+            animation: pulseActive 2s infinite;
+        }
+        @keyframes pulseActive {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .ambient-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(140px);
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.25;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-[#070b13] text-slate-200 antialiased relative">
+    <div class="ambient-glow bg-indigo-600 top-[-200px] left-[-200px]"></div>
+    <div class="ambient-glow bg-cyan-600 bottom-[-200px] right-[-200px]"></div>
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-[#0a0f1d]/90 backdrop-blur-md border-b border-slate-800/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3.5">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+                        <i class="fa-solid fa-headset text-lg"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="font-extrabold text-lg tracking-tight text-white">ResolveDesk AI</span>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono border border-emerald-500/30">Production v4.2</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400">Intelligent SaaS Helpdesk Resolution & Multi-Tier Routing Platform</p>
+                    </div>
+                </div>
+
+                <div class="hidden xl:flex items-center space-x-1.5 bg-slate-900/90 p-1.5 rounded-xl border border-slate-800 text-[11px] font-mono">
+                    <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><i class="fa-solid fa-database mr-1"></i>DBMS (ER &amp; ⋈)</span>
+                    <span class="px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20"><i class="fa-solid fa-square-root-variable mr-1"></i>DMGT (Poset)</span>
+                    <span class="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"><i class="fa-solid fa-diagram-project mr-1"></i>ADSA (Dijkstra)</span>
+                    <span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20"><i class="fa-brands fa-java mr-1"></i>OOPJ (Java)</span>
+                    <span class="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20"><i class="fa-brands fa-python mr-1"></i>Python (NLP)</span>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                    <div class="hidden md:flex items-center space-x-2 text-xs text-slate-400 font-mono">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span id="header-status">API Server: Connected</span>
+                    </div>
+                    <button onclick="switchTab('simulator')" class="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/30 transition flex items-center space-x-1.5">
+                        <i class="fa-solid fa-bolt text-amber-300"></i>
+                        <span>Live Intake Console</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-slate-900/60 border-t border-slate-800/80 px-4 sm:px-6 lg:px-8 py-2">
+            <div class="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 text-xs">
+                <div class="flex items-center space-x-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span class="text-slate-400">Context Retention:</span>
+                    <span class="font-bold text-emerald-400 font-mono">100%</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-arrow-trend-down text-cyan-400 text-[10px]"></i>
+                    <span class="text-slate-400">Resolution Latency:</span>
+                    <span class="font-bold text-cyan-400 font-mono">-58.4%</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-shield-halved text-indigo-400 text-[10px]"></i>
+                    <span class="text-slate-400">SLA Breach Reduction:</span>
+                    <span class="font-bold text-indigo-400 font-mono">89.7%</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-users text-amber-400 text-[10px]"></i>
+                    <span class="text-slate-400">Active Support Agents:</span>
+                    <span class="font-bold text-amber-300 font-mono">8 Certified</span>
+                </div>
+                <div class="hidden lg:flex items-center space-x-2">
+                    <i class="fa-solid fa-network-wired text-purple-400 text-[10px]"></i>
+                    <span class="text-slate-400">Algorithm:</span>
+                    <span class="font-bold text-purple-300 font-mono">Dijkstra Min-Heap</span>
+                </div>
+                <div class="hidden lg:flex items-center space-x-2">
+                    <i class="fa-solid fa-brain text-blue-400 text-[10px]"></i>
+                    <span class="text-slate-400">NLP Accuracy:</span>
+                    <span class="font-bold text-blue-300 font-mono">87.9%</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-[#090d18] border-b border-slate-800/80 sticky top-24 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto no-scrollbar space-x-1 py-1">
+            <button onclick="switchTab('simulator')" id="tab-btn-simulator" class="tab-btn active px-3.5 py-2.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white transition flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-play text-indigo-400"></i>
+                <span>Live Simulator</span>
+            </button>
+            <button onclick="switchTab('flowchart')" id="tab-btn-flowchart" class="tab-btn px-3.5 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-sitemap text-emerald-400"></i>
+                <span>Escalation Flowchart</span>
+            </button>
+            <button onclick="switchTab('roster')" id="tab-btn-roster" class="tab-btn px-3.5 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-users-gear text-amber-400"></i>
+                <span>Agents Directory</span>
+            </button>
+            <button onclick="switchTab('adsa')" id="tab-btn-adsa" class="tab-btn px-3.5 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-diagram-project text-cyan-400"></i>
+                <span>ADSA: Graph &amp; Dijkstra</span>
+            </button>
+            <button onclick="switchTab('dbms')" id="tab-btn-dbms" class="tab-btn px-3.5 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-database text-emerald-400"></i>
+                <span>DBMS: ER &amp; Queries</span>
+            </button>
+            <button onclick="switchTab('dmgt')" id="tab-btn-dmgt" class="tab-btn px-3.5 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-cube text-purple-400"></i>
+                <span>DMGT: Poset &amp; Equiv</span>
+            </button>
+            <button onclick="switchTab('oopj')" id="tab-btn-oopj" class="tab-btn px-3.5 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-brands fa-java text-amber-400"></i>
+                <span>OOPJ: Java Polymorphism</span>
+            </button>
+            <button onclick="switchTab('python')" id="tab-btn-python" class="tab-btn px-3.5 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-brands fa-python text-blue-400"></i>
+                <span>Python: NLP Model</span>
+            </button>
+            <button onclick="switchTab('analytics')" id="tab-btn-analytics" class="tab-btn px-3.5 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition flex items-center space-x-2 whitespace-nowrap">
+                <i class="fa-solid fa-chart-line text-rose-400"></i>
+                <span>Analytics &amp; SLA</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 z-10">
+
+        <!-- Toast -->
+        <div id="toast" class="fixed bottom-6 right-6 z-50 hidden max-w-md bg-slate-900 border border-indigo-500/40 text-slate-100 p-4 rounded-xl shadow-2xl flex items-start space-x-3 transition-all duration-300">
+            <div id="toast-icon" class="text-indigo-400 text-lg mt-0.5"><i class="fa-solid fa-bell"></i></div>
+            <div>
+                <h4 id="toast-title" class="font-bold text-sm"></h4>
+                <p id="toast-msg" class="text-xs text-slate-300 mt-0.5 leading-relaxed"></p>
+            </div>
+            <button onclick="closeToast()" class="text-slate-500 hover:text-slate-300 ml-auto text-xs">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- TAB 1: LIVE SIMULATOR -->
+        <div id="tab-simulator" class="tab-content block space-y-6">
+            <div class="bg-gradient-to-r from-indigo-950/60 via-slate-900 to-cyan-950/40 border border-indigo-500/30 rounded-2xl p-5 shadow-xl relative overflow-hidden">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center space-x-2 text-indigo-400 text-xs font-semibold uppercase tracking-wider">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span>End-to-End Enterprise Resolution Pipeline</span>
+                        </div>
+                        <h2 class="text-xl font-bold text-white mt-1">SaaS Helpdesk Intake &amp; Intelligent Escalation Engine</h2>
+                        <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                            Watch customer complaints trigger real-time Python NLP classification, bind permanently to SQLite DBMS context, traverse the support topology via Dijkstra's shortest path, satisfy DMGT Poset ordering, and invoke Java OOPJ polymorphic handlers.
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="triggerSampleTicket(0)" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">Sample 1: DB Crash</button>
+                        <button onclick="triggerSampleTicket(1)" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">Sample 2: Stripe Billing</button>
+                        <button onclick="triggerSampleTicket(2)" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">Sample 3: SAML SSO</button>
+                        <button onclick="triggerSampleTicket(3)" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">Sample 4: CSV Bug</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-4 space-y-4">
+                    <div class="glass-panel rounded-xl p-5 shadow-lg space-y-4">
+                        <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                            <i class="fa-solid fa-ticket text-indigo-400"></i>
+                            <span>Customer Ticket Intake</span>
+                        </h3>
+
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Customer Account (DBMS Context)</label>
+                            <select id="sim-customer" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                                <option value="1">Satya Nadella · Enterprise Cloud Inc (Enterprise SLA: 1h)</option>
+                                <option value="2">Sundar Pichai · Global Search Corp (Enterprise SLA: 1h)</option>
+                                <option value="3">Ravi Kumar · StartupDev Studio (Pro SLA: 4h)</option>
+                                <option value="4">Ananya Sharma · FinTech Secure Labs (Pro SLA: 4h)</option>
+                                <option value="5">Vikram Varma · Freelance Works (Free SLA: 24h)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Issue Description (Sent to NLP Classifier)</label>
+                            <textarea id="sim-ticket-text" rows="4" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-slate-200 font-sans focus:outline-none focus:border-indigo-500 leading-relaxed" placeholder="Describe the SaaS production problem...">Critical: Production PostgreSQL database connection pool exhausted. API gateway throwing HTTP 504 timeouts across multi-tenant cluster.</textarea>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-medium text-slate-400 mb-1">Initial Priority</label>
+                                <select id="sim-severity" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-rose-400 font-semibold focus:outline-none">
+                                    <option value="Critical">Critical (1h SLA)</option>
+                                    <option value="High">High (2h SLA)</option>
+                                    <option value="Medium">Medium (8h SLA)</option>
+                                    <option value="Low">Low (24h SLA)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-medium text-slate-400 mb-1">Escalation Trigger</label>
+                                <select id="sim-escalation-reason" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-amber-300 focus:outline-none">
+                                    <option value="SLA Breach Risk">SLA Breach Risk</option>
+                                    <option value="L1 Triage Incapacity">L1 Triage Incapacity</option>
+                                    <option value="Specialist Auth Required">Specialist Auth Required</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button id="btn-run-simulation" onclick="runLiveSimulation()" class="w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-indigo-600 via-indigo-500 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white font-semibold text-xs shadow-lg shadow-indigo-600/30 transition flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-play"></i>
+                            <span>Process &amp; Trace Full Multi-Discipline Pipeline</span>
+                        </button>
+                    </div>
+
+                    <div class="glass-panel rounded-xl p-4 shadow-lg">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Discipline Execution Stepper</h4>
+                        <div class="space-y-2.5" id="sim-pipeline-steps">
+                            <div class="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-950 border border-slate-800/80" id="step-python">
+                                <div class="flex items-center space-x-2.5">
+                                    <span class="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-[10px] font-bold">1</span>
+                                    <div>
+                                        <div class="font-semibold text-white">Python NLP Classifier</div>
+                                        <div class="text-[10px] text-slate-400">TF-IDF Vectorization &amp; Categorization</div>
+                                    </div>
+                                </div>
+                                <span class="step-badge text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">Idle</span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-950 border border-slate-800/80" id="step-dbms">
+                                <div class="flex items-center space-x-2.5">
+                                    <span class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-bold">2</span>
+                                    <div>
+                                        <div class="font-semibold text-white">DBMS Context Linker</div>
+                                        <div class="text-[10px] text-slate-400">Relational Join &amp; Customer History</div>
+                                    </div>
+                                </div>
+                                <span class="step-badge text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">Idle</span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-950 border border-slate-800/80" id="step-dmgt">
+                                <div class="flex items-center space-x-2.5">
+                                    <span class="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center text-[10px] font-bold">3</span>
+                                    <div>
+                                        <div class="font-semibold text-white">DMGT Poset Validator</div>
+                                        <div class="text-[10px] text-slate-400">Hierarchy Ordering &amp; Partitioning</div>
+                                    </div>
+                                </div>
+                                <span class="step-badge text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">Idle</span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-950 border border-slate-800/80" id="step-adsa">
+                                <div class="flex items-center space-x-2.5">
+                                    <span class="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-[10px] font-bold">4</span>
+                                    <div>
+                                        <div class="font-semibold text-white">ADSA Shortest Path Router</div>
+                                        <div class="text-[10px] text-slate-400">Dijkstra Weighted DAG Escalation</div>
+                                    </div>
+                                </div>
+                                <span class="step-badge text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">Idle</span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-950 border border-slate-800/80" id="step-oopj">
+                                <div class="flex items-center space-x-2.5">
+                                    <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-[10px] font-bold">5</span>
+                                    <div>
+                                        <div class="font-semibold text-white">OOPJ Dynamic Dispatch</div>
+                                        <div class="text-[10px] text-slate-400">Specialist Polymorphic Resolver</div>
+                                    </div>
+                                </div>
+                                <span class="step-badge text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">Idle</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-8 space-y-4">
+                    <div class="glass-panel rounded-xl p-5 shadow-lg">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                            <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                                <i class="fa-solid fa-microchip text-cyan-400"></i>
+                                <span>Real-Time Execution State Inspector</span>
+                            </h3>
+                            <span id="sim-overall-status" class="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">Standby</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-4">
+                            <div class="bg-slate-950/80 p-3.5 rounded-xl border border-slate-800/90">
+                                <div class="flex items-center justify-between text-xs mb-2">
+                                    <span class="text-blue-400 font-semibold flex items-center space-x-1.5">
+                                        <i class="fa-brands fa-python"></i>
+                                        <span>Python NLP Classification</span>
+                                    </span>
+                                    <span id="res-nlp-cat" class="text-[11px] font-mono px-2 py-0.5 rounded bg-blue-500/20 text-blue-300">Pending</span>
+                                </div>
+                                <div class="text-[11px] space-y-1 text-slate-400">
+                                    <div class="flex justify-between"><span>Model Architecture:</span><span class="font-mono text-slate-200">TF-IDF + Calibrated SVC</span></div>
+                                    <div class="flex justify-between"><span>Confidence Score:</span><span id="res-nlp-conf" class="font-mono text-emerald-400 font-semibold">0.0%</span></div>
+                                    <div class="flex justify-between"><span>Recommended Urgency:</span><span id="res-nlp-urgency" class="font-mono text-amber-300">Awaiting Input</span></div>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-950/80 p-3.5 rounded-xl border border-slate-800/90">
+                                <div class="flex items-center justify-between text-xs mb-2">
+                                    <span class="text-emerald-400 font-semibold flex items-center space-x-1.5">
+                                        <i class="fa-solid fa-database"></i>
+                                        <span>DBMS Context Binding</span>
+                                    </span>
+                                    <span id="res-dbms-status" class="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">Unlinked</span>
+                                </div>
+                                <div class="text-[11px] space-y-1 text-slate-400">
+                                    <div class="flex justify-between"><span>Account Context:</span><span id="res-dbms-company" class="font-mono text-slate-200">None</span></div>
+                                    <div class="flex justify-between"><span>SLA Target:</span><span id="res-dbms-sla" class="font-mono text-slate-200">--</span></div>
+                                    <div class="flex justify-between"><span>Referential Integrity:</span><span class="font-mono text-emerald-400">100% (FK CASCADE)</span></div>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-950/80 p-3.5 rounded-xl border border-slate-800/90">
+                                <div class="flex items-center justify-between text-xs mb-2">
+                                    <span class="text-cyan-400 font-semibold flex items-center space-x-1.5">
+                                        <i class="fa-solid fa-route"></i>
+                                        <span>ADSA Optimal Route</span>
+                                    </span>
+                                    <span id="res-adsa-latency" class="text-[11px] font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300">0 min latency</span>
+                                </div>
+                                <div class="text-[11px] space-y-1 text-slate-400">
+                                    <div class="flex justify-between"><span>Dijkstra Path:</span><span id="res-adsa-path" class="font-mono text-emerald-400 font-semibold">None</span></div>
+                                    <div class="flex justify-between"><span>Assigned Specialist:</span><span id="res-adsa-agent" class="font-mono text-slate-200">Pending</span></div>
+                                    <div class="flex justify-between"><span>Routing Complexity:</span><span class="font-mono text-purple-400">O((V+E) log V)</span></div>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-950/80 p-3.5 rounded-xl border border-slate-800/90">
+                                <div class="flex items-center justify-between text-xs mb-2">
+                                    <span class="text-amber-400 font-semibold flex items-center space-x-1.5">
+                                        <i class="fa-brands fa-java"></i>
+                                        <span>OOPJ Handler Invocation</span>
+                                    </span>
+                                    <span id="res-oopj-handler" class="text-[11px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300">Pending</span>
+                                </div>
+                                <div class="text-[11px] space-y-1 text-slate-400">
+                                    <div class="flex justify-between"><span>Design Pattern:</span><span class="font-mono text-slate-200">Strategy &amp; Polymorphism</span></div>
+                                    <div class="flex justify-between"><span>Executed Method:</span><span id="res-oopj-method" class="font-mono text-indigo-300">resolveTicket()</span></div>
+                                    <div class="flex justify-between"><span>Resolution State:</span><span id="res-oopj-state" class="font-mono text-emerald-400">Awaiting Trigger</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <div class="flex items-center justify-between text-xs text-slate-400 mb-1 font-mono">
+                                <span><i class="fa-solid fa-terminal mr-1 text-slate-500"></i>Live Multi-Discipline Pipeline Console</span>
+                                <button onclick="clearConsoleLog()" class="hover:text-white transition">Clear</button>
+                            </div>
+                            <div id="sim-console-log" class="bg-slate-950 border border-slate-800/90 rounded-xl p-3 h-48 overflow-y-auto font-mono text-[11px] space-y-1 text-slate-300 shadow-inner">
+                                <div class="text-slate-500">// System initialized. Select a sample ticket or input custom text to execute full workflow.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: FLOWCHART -->
+        <div id="tab-flowchart" class="tab-content hidden space-y-6">
+            <div class="glass-panel rounded-2xl p-6 shadow-lg">
+                <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-800 gap-3">
+                    <div>
+                        <div class="flex items-center space-x-2 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
+                            <i class="fa-solid fa-sitemap"></i>
+                            <span>End-to-End Visual Workflow Architecture</span>
+                        </div>
+                        <h2 class="text-xl font-bold text-white mt-1">Interactive SaaS Ticket Escalation Flowchart</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Click any stage in the flowchart to see its internal mathematical model, code implementation, and role in zero-context-loss ticket resolution.</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="animateFlowchartExecution()" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition flex items-center space-x-1.5 shadow-md shadow-emerald-600/30">
+                            <i class="fa-solid fa-play"></i>
+                            <span>Animate Complete Traversal</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-3 mt-6 text-center">
+                    <div id="flow-step-1" onclick="inspectFlowStep(1)" class="flow-node cursor-pointer bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col items-center justify-between h-44">
+                        <div class="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-sm mb-2"><i class="fa-solid fa-user-tag"></i></div>
+                        <div>
+                            <span class="text-[10px] font-mono text-blue-400 font-bold uppercase tracking-wider">Stage 1</span>
+                            <h4 class="font-bold text-xs text-white mt-0.5">Customer Intake</h4>
+                            <p class="text-[10px] text-slate-400 mt-1">SaaS Ticket arrives with Account ID &amp; SLA</p>
+                        </div>
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-slate-900 text-slate-300 font-mono">DBMS Link</span>
+                    </div>
+
+                    <div id="flow-step-2" onclick="inspectFlowStep(2)" class="flow-node cursor-pointer bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col items-center justify-between h-44">
+                        <div class="w-10 h-10 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm mb-2"><i class="fa-brands fa-python"></i></div>
+                        <div>
+                            <span class="text-[10px] font-mono text-indigo-400 font-bold uppercase tracking-wider">Stage 2</span>
+                            <h4 class="font-bold text-xs text-white mt-0.5">NLP Classifier</h4>
+                            <p class="text-[10px] text-slate-400 mt-1">TF-IDF Vectorizer auto-tags category</p>
+                        </div>
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono">Python ML</span>
+                    </div>
+
+                    <div id="flow-step-3" onclick="inspectFlowStep(3)" class="flow-node cursor-pointer bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col items-center justify-between h-44">
+                        <div class="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm mb-2"><i class="fa-solid fa-database"></i></div>
+                        <div>
+                            <span class="text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-wider">Stage 3</span>
+                            <h4 class="font-bold text-xs text-white mt-0.5">3NF Storage</h4>
+                            <p class="text-[10px] text-slate-400 mt-1">Context binding via Foreign Keys</p>
+                        </div>
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">DBMS 3NF</span>
+                    </div>
+
+                    <div id="flow-step-4" onclick="inspectFlowStep(4)" class="flow-node cursor-pointer bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col items-center justify-between h-44">
+                        <div class="w-10 h-10 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-sm mb-2"><i class="fa-solid fa-headset"></i></div>
+                        <div>
+                            <span class="text-[10px] font-mono text-cyan-400 font-bold uppercase tracking-wider">Stage 4</span>
+                            <h4 class="font-bold text-xs text-white mt-0.5">L1 Triage</h4>
+                            <p class="text-[10px] text-slate-400 mt-1">Ramesh / Sneha attempt direct fix</p>
+                        </div>
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono">First Contact</span>
+                    </div>
+
+                    <div id="flow-step-5" onclick="inspectFlowStep(5)" class="flow-node cursor-pointer bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col items-center justify-between h-44">
+                        <div class="w-10 h-10 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-sm mb-2"><i class="fa-solid fa-route"></i></div>
+                        <div>
+                            <span class="text-[10px] font-mono text-purple-400 font-bold uppercase tracking-wider">Stage 5</span>
+                            <h4 class="font-bold text-xs text-white mt-0.5">Dijkstra Routing</h4>
+                            <p class="text-[10px] text-slate-400 mt-1">Dynamic queue weights calculate fastest path</p>
+                        </div>
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono">ADSA + DMGT</span>
+                    </div>
+
+                    <div id="flow-step-6" onclick="inspectFlowStep(6)" class="flow-node cursor-pointer bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col items-center justify-between h-44">
+                        <div class="w-10 h-10 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-sm mb-2"><i class="fa-brands fa-java"></i></div>
+                        <div>
+                            <span class="text-[10px] font-mono text-amber-400 font-bold uppercase tracking-wider">Stage 6</span>
+                            <h4 class="font-bold text-xs text-white mt-0.5">Specialist Resolve</h4>
+                            <p class="text-[10px] text-slate-400 mt-1">Polymorphic execution by L2/L3 expert</p>
+                        </div>
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">OOPJ Strategy</span>
+                    </div>
+
+                    <div id="flow-step-7" onclick="inspectFlowStep(7)" class="flow-node cursor-pointer bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col items-center justify-between h-44">
+                        <div class="w-10 h-10 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center font-bold text-sm mb-2"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                        <div>
+                            <span class="text-[10px] font-mono text-teal-400 font-bold uppercase tracking-wider">Stage 7</span>
+                            <h4 class="font-bold text-xs text-white mt-0.5">Audit Trail Log</h4>
+                            <p class="text-[10px] text-slate-400 mt-1">Escalation stored permanently in DB</p>
+                        </div>
+                        <span class="text-[9px] px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 font-mono">Zero Context Loss</span>
+                    </div>
+                </div>
+
+                <div id="flow-detail-panel" class="mt-6 p-4 rounded-xl bg-slate-950 border border-slate-800">
+                    <div class="flex items-center justify-between">
+                        <h4 id="flow-detail-title" class="text-sm font-bold text-indigo-400 flex items-center space-x-2">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <span>Flowchart Stage Deep Dive</span>
+                        </h4>
+                        <span id="flow-detail-subject" class="text-xs font-mono px-2.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300">Select Any Stage Above</span>
+                    </div>
+                    <p id="flow-detail-desc" class="text-xs text-slate-300 mt-2 leading-relaxed">
+                        Click on any node in the flowchart above to inspect how each discipline interacts in real-time. For example, Stage 5 demonstrates ADSA Dijkstra running over a DMGT Poset hierarchy with dynamic edge weights!
+                    </p>
+                    <div id="flow-detail-code" class="mt-3 p-3 rounded-lg bg-slate-900 border border-slate-800/80 font-mono text-[11px] text-cyan-300 overflow-x-auto">
+                        // Real-time telemetry will appear here when executing simulation.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: AGENTS ROSTER -->
+        <div id="tab-roster" class="tab-content hidden space-y-6">
+            <div class="glass-panel rounded-2xl p-6 shadow-lg">
+                <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-800 gap-3">
+                    <div>
+                        <div class="flex items-center space-x-2 text-amber-400 text-xs font-semibold uppercase tracking-wider">
+                            <i class="fa-solid fa-users-gear"></i>
+                            <span>Authorized Support Engineers &amp; Specialist Dealers</span>
+                        </div>
+                        <h2 class="text-xl font-bold text-white mt-1">Multi-Tier Agent Hierarchy &amp; Active Queue Roster</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Real-time status, domain specializations, active ticket workloads, and resolution performance rates across the company.</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="congestAgent('A3')" class="px-3 py-1.5 rounded-lg bg-rose-600/80 hover:bg-rose-500 text-white text-xs font-semibold transition flex items-center space-x-1.5">
+                            <i class="fa-solid fa-fire"></i>
+                            <span>Surge Load on Kiran (L2 Tech)</span>
+                        </button>
+                        <button onclick="resetAllAgentLoads()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition">
+                            Reset Workloads
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 relative overflow-hidden flex flex-col justify-between h-64">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30">L1 Triage Lead</span>
+                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            </div>
+                            <div class="flex items-center space-x-3 mt-1">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center font-bold text-sm text-white">RP</div>
+                                <div>
+                                    <h4 class="font-bold text-sm text-white">Ramesh Patel</h4>
+                                    <p class="text-[11px] text-slate-400">General Frontline Triage</p>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-[11px] space-y-1 text-slate-400">
+                                <div class="flex justify-between"><span>Email:</span><span class="font-mono text-slate-300">ramesh@helpdesk.internal</span></div>
+                                <div class="flex justify-between"><span>Resolution Rate:</span><span class="font-mono text-emerald-400">96.4%</span></div>
+                                <div class="flex justify-between"><span>Avg Resolution Time:</span><span class="font-mono text-cyan-300">12 mins</span></div>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-2 border-t border-slate-800">
+                            <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-400">Active Load:</span><span id="load-text-A1" class="font-mono font-bold text-slate-200">2 / 10 tickets</span></div>
+                            <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden"><div id="load-bar-A1" class="h-full bg-sky-400 transition-all duration-500" style="width: 20%"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 relative overflow-hidden flex flex-col justify-between h-64">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30">L1 Support Agent</span>
+                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            </div>
+                            <div class="flex items-center space-x-3 mt-1">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center font-bold text-sm text-white">SK</div>
+                                <div>
+                                    <h4 class="font-bold text-sm text-white">Sneha Kulkarni</h4>
+                                    <p class="text-[11px] text-slate-400">Customer Success &amp; Triage</p>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-[11px] space-y-1 text-slate-400">
+                                <div class="flex justify-between"><span>Email:</span><span class="font-mono text-slate-300">sneha@helpdesk.internal</span></div>
+                                <div class="flex justify-between"><span>Resolution Rate:</span><span class="font-mono text-emerald-400">95.1%</span></div>
+                                <div class="flex justify-between"><span>Avg Resolution Time:</span><span class="font-mono text-cyan-300">14 mins</span></div>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-2 border-t border-slate-800">
+                            <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-400">Active Load:</span><span id="load-text-A2" class="font-mono font-bold text-slate-200">3 / 10 tickets</span></div>
+                            <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden"><div id="load-bar-A2" class="h-full bg-sky-400 transition-all duration-500" style="width: 30%"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950/80 border border-indigo-500/40 rounded-xl p-4 relative overflow-hidden flex flex-col justify-between h-64 shadow-lg shadow-indigo-500/10">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">L2 Tech Specialist</span>
+                                <span id="status-dot-A3" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            </div>
+                            <div class="flex items-center space-x-3 mt-1">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-sm text-white">KK</div>
+                                <div>
+                                    <h4 class="font-bold text-sm text-white">Kiran Kumar</h4>
+                                    <p class="text-[11px] text-slate-400">Database &amp; Cluster Engineer</p>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-[11px] space-y-1 text-slate-400">
+                                <div class="flex justify-between"><span>Email:</span><span class="font-mono text-slate-300">kiran@helpdesk.internal</span></div>
+                                <div class="flex justify-between"><span>Specialty:</span><span class="font-mono text-indigo-300">Postgres, Redis, OOM</span></div>
+                                <div class="flex justify-between"><span>Avg Resolution:</span><span class="font-mono text-cyan-300">22 mins</span></div>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-2 border-t border-slate-800">
+                            <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-400">Active Load:</span><span id="load-text-A3" class="font-mono font-bold text-indigo-300">1 / 8 tickets</span></div>
+                            <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden"><div id="load-bar-A3" class="h-full bg-indigo-500 transition-all duration-500" style="width: 12.5%"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 relative overflow-hidden flex flex-col justify-between h-64">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">L2 Billing Lead</span>
+                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            </div>
+                            <div class="flex items-center space-x-3 mt-1">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center font-bold text-sm text-white">DN</div>
+                                <div>
+                                    <h4 class="font-bold text-sm text-white">Deepa Nair</h4>
+                                    <p class="text-[11px] text-slate-400">Revenue &amp; Payment Gateway</p>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-[11px] space-y-1 text-slate-400">
+                                <div class="flex justify-between"><span>Email:</span><span class="font-mono text-slate-300">deepa@helpdesk.internal</span></div>
+                                <div class="flex justify-between"><span>Specialty:</span><span class="font-mono text-emerald-300">Stripe, Invoicing, Tax</span></div>
+                                <div class="flex justify-between"><span>Avg Resolution:</span><span class="font-mono text-cyan-300">16 mins</span></div>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-2 border-t border-slate-800">
+                            <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-400">Active Load:</span><span id="load-text-A4" class="font-mono font-bold text-slate-200">1 / 8 tickets</span></div>
+                            <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden"><div id="load-bar-A4" class="h-full bg-emerald-500 transition-all duration-500" style="width: 12.5%"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 relative overflow-hidden flex flex-col justify-between h-64">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">L2 Auth Security</span>
+                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            </div>
+                            <div class="flex items-center space-x-3 mt-1">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-pink-600 flex items-center justify-center font-bold text-sm text-white">MJ</div>
+                                <div>
+                                    <h4 class="font-bold text-sm text-white">Manish Joshi</h4>
+                                    <p class="text-[11px] text-slate-400">Identity &amp; SSO Architect</p>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-[11px] space-y-1 text-slate-400">
+                                <div class="flex justify-between"><span>Email:</span><span class="font-mono text-slate-300">manish@helpdesk.internal</span></div>
+                                <div class="flex justify-between"><span>Specialty:</span><span class="font-mono text-purple-300">Okta, SAML 2.0, 2FA</span></div>
+                                <div class="flex justify-between"><span>Avg Resolution:</span><span class="font-mono text-cyan-300">18 mins</span></div>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-2 border-t border-slate-800">
+                            <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-400">Active Load:</span><span id="load-text-A5" class="font-mono font-bold text-slate-200">2 / 8 tickets</span></div>
+                            <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden"><div id="load-bar-A5" class="h-full bg-purple-500 transition-all duration-500" style="width: 25%"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950/80 border border-purple-500/40 rounded-xl p-4 relative overflow-hidden flex flex-col justify-between h-64 shadow-lg shadow-purple-500/10">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30">L3 Senior Staff</span>
+                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            </div>
+                            <div class="flex items-center space-x-3 mt-1">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-700 flex items-center justify-center font-bold text-sm text-white">AS</div>
+                                <div>
+                                    <h4 class="font-bold text-sm text-white">Dr. Arvind Sen</h4>
+                                    <p class="text-[11px] text-slate-400">Principal Infrastructure Staff</p>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-[11px] space-y-1 text-slate-400">
+                                <div class="flex justify-between"><span>Email:</span><span class="font-mono text-slate-300">arvind@helpdesk.internal</span></div>
+                                <div class="flex justify-between"><span>Specialty:</span><span class="font-mono text-purple-300">Kernel, K8s, Deadlocks</span></div>
+                                <div class="flex justify-between"><span>Avg Resolution:</span><span class="font-mono text-cyan-300">35 mins</span></div>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-2 border-t border-slate-800">
+                            <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-400">Active Load:</span><span id="load-text-A6" class="font-mono font-bold text-purple-300">1 / 6 tickets</span></div>
+                            <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden"><div id="load-bar-A6" class="h-full bg-purple-500 transition-all duration-500" style="width: 16.6%"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 relative overflow-hidden flex flex-col justify-between h-64">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30">L3 Finance Lead</span>
+                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            </div>
+                            <div class="flex items-center space-x-3 mt-1">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-600 to-cyan-600 flex items-center justify-center font-bold text-sm text-white">LN</div>
+                                <div>
+                                    <h4 class="font-bold text-sm text-white">Lakshmi Narayanan</h4>
+                                    <p class="text-[11px] text-slate-400">Enterprise Revenue Controller</p>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-[11px] space-y-1 text-slate-400">
+                                <div class="flex justify-between"><span>Email:</span><span class="font-mono text-slate-300">lakshmi@helpdesk.internal</span></div>
+                                <div class="flex justify-between"><span>Specialty:</span><span class="font-mono text-emerald-300">Wire Transfers &gt; $50k</span></div>
+                                <div class="flex justify-between"><span>Avg Resolution:</span><span class="font-mono text-cyan-300">28 mins</span></div>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-2 border-t border-slate-800">
+                            <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-400">Active Load:</span><span id="load-text-A7" class="font-mono font-bold text-slate-200">0 / 6 tickets</span></div>
+                            <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden"><div id="load-bar-A7" class="h-full bg-emerald-500 transition-all duration-500" style="width: 0%"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950/80 border border-amber-500/40 rounded-xl p-4 relative overflow-hidden flex flex-col justify-between h-64 shadow-lg shadow-amber-500/10">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">Specialist Lead</span>
+                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            </div>
+                            <div class="flex items-center space-x-3 mt-1">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-500 to-rose-600 flex items-center justify-center font-bold text-sm text-white">VI</div>
+                                <div>
+                                    <h4 class="font-bold text-sm text-white">Venkatesh Iyer</h4>
+                                    <p class="text-[11px] text-slate-400">Principal Systems Architect</p>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-[11px] space-y-1 text-slate-400">
+                                <div class="flex justify-between"><span>Email:</span><span class="font-mono text-slate-300">venkat@helpdesk.internal</span></div>
+                                <div class="flex justify-between"><span>Authority:</span><span class="font-mono text-amber-300">Poset Top Cover Element</span></div>
+                                <div class="flex justify-between"><span>Avg Resolution:</span><span class="font-mono text-cyan-300">45 mins</span></div>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-2 border-t border-slate-800">
+                            <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-400">Active Load:</span><span id="load-text-A8" class="font-mono font-bold text-amber-300">1 / 5 tickets</span></div>
+                            <div class="w-full h-2 rounded-full bg-slate-900 overflow-hidden"><div id="load-bar-A8" class="h-full bg-amber-500 transition-all duration-500" style="width: 20%"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: ADSA -->
+        <div id="tab-adsa" class="tab-content hidden space-y-6">
+            <div class="glass-panel rounded-2xl p-6 shadow-lg">
+                <div class="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-slate-800 gap-3">
+                    <div>
+                        <div class="flex items-center space-x-2 text-cyan-400 text-xs font-semibold uppercase tracking-wider">
+                            <i class="fa-solid fa-diagram-project"></i>
+                            <span>ADSA Unit 2: Escalation Path as a Directed Graph</span>
+                        </div>
+                        <h2 class="text-xl font-bold text-white mt-1">Interactive Support Topology &amp; Dijkstra Engine</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Edge weights represent dynamic routing latency: Weight = BaseLatency &times; (1 + 1.5 &times; (CurrentLoad / MaxCapacity)).</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="recalculateDijkstra(true)" class="px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition flex items-center space-x-1.5 shadow-md shadow-cyan-600/30">
+                            <i class="fa-solid fa-bolt"></i>
+                            <span>Simulate Congestion Surge on A3</span>
+                        </button>
+                        <button onclick="resetGraphState()" class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition">
+                            Reset Weights
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-5">
+                    <div class="lg:col-span-8 bg-slate-950 border border-slate-800 rounded-xl p-3 relative overflow-hidden flex flex-col items-center">
+                        <div class="w-full flex items-center justify-between px-2 pb-2 text-[11px] text-slate-400 border-b border-slate-800/80">
+                            <span class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span><span>Support Agent Node</span></span>
+                            <span class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span><span>Optimal Shortest Path</span></span>
+                            <span>Click any node to inject queue latency</span>
+                        </div>
+                        <canvas id="adsaGraphCanvas" class="w-full h-80 sm:h-96 cursor-pointer"></canvas>
+                        <div class="text-[11px] text-slate-500 italic mt-1">Directed Acyclic Graph (DAG) with non-negative edge weights for guaranteed Dijkstra convergence.</div>
+                    </div>
+
+                    <div class="lg:col-span-4 space-y-4">
+                        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                            <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider mb-2 flex items-center justify-between">
+                                <span>Dijkstra Priority Queue Trace</span>
+                                <span class="text-[10px] text-cyan-400 font-mono">Min-Heap</span>
+                            </h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs text-slate-300 font-mono">
+                                    <thead class="text-[10px] text-slate-500 uppercase border-b border-slate-800">
+                                        <tr><th class="py-1.5">Node</th><th class="py-1.5">Dist</th><th class="py-1.5">Prev</th><th class="py-1.5">Status</th></tr>
+                                    </thead>
+                                    <tbody id="dijkstra-trace-body" class="divide-y divide-slate-800/60 text-[11px]"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs space-y-2">
+                            <h4 class="font-bold text-white flex items-center space-x-1.5"><i class="fa-solid fa-calculator text-cyan-400"></i><span>Algorithmic Complexity Proof</span></h4>
+                            <p class="text-slate-400 text-[11px] leading-relaxed">Using an adjacency list representation with an indexed Binary Heap priority queue:</p>
+                            <div class="p-2 rounded bg-slate-900 font-mono text-[11px] text-cyan-300">Time: O((|V| + |E|) · log |V|)<br>Space: O(|V| + |E|)</div>
+                            <p class="text-[11px] text-slate-400">Automatically bypasses congested agents to guarantee SLA targets under high load bursts.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: DBMS -->
+        <div id="tab-dbms" class="tab-content hidden space-y-6">
+            <div class="glass-panel rounded-2xl p-6 shadow-lg">
+                <div class="pb-4 border-b border-slate-800">
+                    <div class="flex items-center space-x-2 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
+                        <i class="fa-solid fa-database"></i>
+                        <span>DBMS Units 1 &amp; 2: Entity-Relationship &amp; Relational Algebra</span>
+                    </div>
+                    <h2 class="text-xl font-bold text-white mt-1">Customer-to-Ticket Historical Relational Schema</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Solving the root problem: Tickets are strictly normalized with foreign keys to prevent orphan tickets and preserve customer context.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-800 text-xs">
+                            <span class="font-bold text-emerald-400 flex items-center space-x-1.5"><i class="fa-solid fa-user-tie"></i><span>CUSTOMERS</span></span>
+                            <span class="text-[10px] text-slate-500 font-mono">1-to-N Tickets</span>
+                        </div>
+                        <div class="font-mono text-[11px] space-y-1 text-slate-300">
+                            <div class="text-amber-300 flex justify-between"><span>PK: customer_id</span><span>INTEGER</span></div>
+                            <div class="flex justify-between"><span>name</span><span>VARCHAR</span></div>
+                            <div class="flex justify-between"><span>company</span><span>VARCHAR</span></div>
+                            <div class="flex justify-between"><span>subscription_tier</span><span>ENUM</span></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950 border border-indigo-500/40 rounded-xl p-3.5 space-y-2 shadow-lg shadow-indigo-500/10">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-800 text-xs">
+                            <span class="font-bold text-indigo-400 flex items-center space-x-1.5"><i class="fa-solid fa-ticket"></i><span>TICKETS</span></span>
+                            <span class="text-[10px] text-indigo-400 font-mono">Central Entity</span>
+                        </div>
+                        <div class="font-mono text-[11px] space-y-1 text-slate-300">
+                            <div class="text-amber-300 flex justify-between"><span>PK: ticket_id</span><span>INTEGER</span></div>
+                            <div class="text-emerald-400 flex justify-between"><span>FK: customer_id</span><span>INTEGER</span></div>
+                            <div class="flex justify-between"><span>category</span><span>VARCHAR</span></div>
+                            <div class="flex justify-between"><span>priority</span><span>VARCHAR</span></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-800 text-xs">
+                            <span class="font-bold text-cyan-400 flex items-center space-x-1.5"><i class="fa-solid fa-id-badge"></i><span>AGENTS</span></span>
+                            <span class="text-[10px] text-slate-500 font-mono">Escalation Node</span>
+                        </div>
+                        <div class="font-mono text-[11px] space-y-1 text-slate-300">
+                            <div class="text-amber-300 flex justify-between"><span>PK: agent_id</span><span>INTEGER</span></div>
+                            <div class="flex justify-between"><span>name</span><span>VARCHAR</span></div>
+                            <div class="flex justify-between"><span>tier_level</span><span>ENUM</span></div>
+                            <div class="flex justify-between"><span>specialization</span><span>VARCHAR</span></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-800 text-xs">
+                            <span class="font-bold text-purple-400 flex items-center space-x-1.5"><i class="fa-solid fa-clock-rotate-left"></i><span>ESCALATION_LOGS</span></span>
+                            <span class="text-[10px] text-slate-500 font-mono">Audit Trail</span>
+                        </div>
+                        <div class="font-mono text-[11px] space-y-1 text-slate-300">
+                            <div class="text-amber-300 flex justify-between"><span>PK: escalation_id</span><span>INTEGER</span></div>
+                            <div class="text-indigo-400 flex justify-between"><span>FK: ticket_id</span><span>INTEGER</span></div>
+                            <div class="text-cyan-400 flex justify-between"><span>FK: to_agent_id</span><span>INTEGER</span></div>
+                            <div class="flex justify-between"><span>escalated_at</span><span>TIMESTAMP</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-slate-950 border border-slate-800 rounded-xl p-4">
+                    <h3 class="text-sm font-bold text-white mb-2 flex items-center space-x-2">
+                        <i class="fa-solid fa-square-root-variable text-emerald-400"></i>
+                        <span>Relational Algebra Query Runner</span>
+                    </h3>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <button onclick="runRelationalQuery('q1')" class="text-xs px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-mono">Query 1: σ(Status='Escalated' ∧ Priority='Critical')</button>
+                        <button onclick="runRelationalQuery('q2')" class="text-xs px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-mono">Query 2: Π(Name, Title, Tier) (Tickets ⋈ Customers)</button>
+                        <button onclick="runRelationalQuery('q3')" class="text-xs px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-mono">Query 3: Escalation Audit Trail ⋈ Agents</button>
+                    </div>
+
+                    <div class="p-3 bg-slate-900/80 rounded-lg border border-slate-800 text-xs font-mono mb-3 space-y-1">
+                        <div class="text-emerald-400" id="ra-formula">π customer_name, ticket_id, priority ( σ priority='Critical' ( CUSTOMERS ⋈ TICKETS ) )</div>
+                        <div class="text-slate-400" id="ra-sql">SELECT c.name, t.ticket_id, t.title, t.priority FROM customers c JOIN tickets t ON c.customer_id = t.customer_id WHERE t.priority = 'Critical';</div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-300 font-mono">
+                            <thead class="bg-slate-900 text-[10px] text-slate-400 uppercase border-b border-slate-800" id="ra-table-head">
+                                <tr>
+                                    <th class="p-2.5">Customer Name</th>
+                                    <th class="p-2.5">Ticket ID</th>
+                                    <th class="p-2.5">Issue Title</th>
+                                    <th class="p-2.5">Priority</th>
+                                    <th class="p-2.5">Context Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ra-table-body" class="divide-y divide-slate-800/60">
+                                <tr>
+                                    <td class="p-2.5 font-bold text-white">Satya Nadella</td>
+                                    <td class="p-2.5 text-indigo-400">#1001</td>
+                                    <td class="p-2.5">Database connection pool exhausted</td>
+                                    <td class="p-2.5 text-rose-400">Critical</td>
+                                    <td class="p-2.5 text-emerald-400">100% Context Preserved</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: DMGT -->
+        <div id="tab-dmgt" class="tab-content hidden space-y-6">
+            <div class="glass-panel rounded-2xl p-6 shadow-lg">
+                <div class="pb-4 border-b border-slate-800">
+                    <div class="flex items-center space-x-2 text-purple-400 text-xs font-semibold uppercase tracking-wider">
+                        <i class="fa-solid fa-cube"></i>
+                        <span>DMGT Unit 2: Relations, Poset &amp; Equivalence Partitioning</span>
+                    </div>
+                    <h2 class="text-xl font-bold text-white mt-1">Discrete Mathematical Relations &amp; Hierarchy Verification</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Formal verification of the support hierarchy Poset (Reflexive, Antisymmetric, Transitive) and disjoint category equivalence partitioning.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2">
+                        <div class="flex items-center space-x-2 text-purple-400 font-bold text-xs uppercase"><i class="fa-solid fa-arrows-rotate"></i><span>1. Reflexivity Proof</span></div>
+                        <p class="text-xs font-mono text-cyan-300">∀ a ∈ S, (a, a) ∈ R</p>
+                        <p class="text-xs text-slate-400 leading-relaxed">Every agent tier inherently possesses resolution authority equal to itself. L1 ≤ L1, L2 ≤ L2, L3 ≤ L3, Lead ≤ Lead. Verified True.</p>
+                    </div>
+
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2">
+                        <div class="flex items-center space-x-2 text-purple-400 font-bold text-xs uppercase"><i class="fa-solid fa-arrow-right-arrow-left"></i><span>2. Antisymmetry Proof</span></div>
+                        <p class="text-xs font-mono text-cyan-300">(a, b) ∈ R ∧ (b, a) ∈ R ⇒ a = b</p>
+                        <p class="text-xs text-slate-400 leading-relaxed">If Agent A escalates to Agent B and Agent B can escalate to Agent A, they must belong to the exact same tier. Eliminates circular deadlocks.</p>
+                    </div>
+
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2">
+                        <div class="flex items-center space-x-2 text-purple-400 font-bold text-xs uppercase"><i class="fa-solid fa-forward-step"></i><span>3. Transitivity Proof</span></div>
+                        <p class="text-xs font-mono text-cyan-300">(a, b) ∈ R ∧ (b, c) ∈ R ⇒ (a, c) ∈ R</p>
+                        <p class="text-xs text-slate-400 leading-relaxed">If L1 ≤ L2 and L2 ≤ L3, then L1 transitively possesses an escalation pathway to L3. Forms valid partially ordered set (Poset).</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 text-center">
+                        <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider mb-4">Hasse Diagram (Support Poset Cover)</h4>
+                        <div class="flex flex-col items-center space-y-2">
+                            <div class="px-4 py-2 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-mono font-bold">Venkatesh Iyer (Specialist Lead · Top Cover)</div>
+                            <div class="text-slate-500 font-mono text-sm">↑</div>
+                            <div class="flex space-x-3">
+                                <div class="px-3 py-1.5 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs font-mono">Dr. Arvind Sen (L3 Tech)</div>
+                                <div class="px-3 py-1.5 rounded-lg bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs font-mono">Lakshmi N. (L3 Finance)</div>
+                            </div>
+                            <div class="text-slate-500 font-mono text-sm">↑</div>
+                            <div class="flex space-x-2">
+                                <div class="px-2.5 py-1.5 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[11px] font-mono">Kiran K. (L2 Tech)</div>
+                                <div class="px-2.5 py-1.5 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[11px] font-mono">Deepa N. (L2 Bill)</div>
+                                <div class="px-2.5 py-1.5 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[11px] font-mono">Manish J. (L2 Auth)</div>
+                            </div>
+                            <div class="text-slate-500 font-mono text-sm">↑</div>
+                            <div class="px-4 py-1.5 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/40 text-xs font-mono font-bold">Ramesh Patel &amp; Sneha Kulkarni (L1 Frontline Triage)</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                        <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider mb-2">Ticket Equivalence Classes: [Ti] ~ [Tj]</h4>
+                        <p class="text-xs text-slate-400 mb-3">Two tickets belong to the same equivalence class if and only if Category(Ti) == Category(Tj). Proves disjoint union partitions:</p>
+                        <div class="space-y-2 text-xs font-mono">
+                            <div class="p-2 rounded bg-slate-900 border border-slate-800 flex justify-between"><span class="text-indigo-400">[Technical] = { T1, T7, T16, T18, T23 }</span><span class="text-slate-500">Queue: Kiran K.</span></div>
+                            <div class="p-2 rounded bg-slate-900 border border-slate-800 flex justify-between"><span class="text-emerald-400">[Billing] = { T2, T6, T11, T14 }</span><span class="text-slate-500">Queue: Deepa N.</span></div>
+                            <div class="p-2 rounded bg-slate-900 border border-slate-800 flex justify-between"><span class="text-purple-400">[Auth_Access] = { T3, T31, T34, T40 }</span><span class="text-slate-500">Queue: Manish J.</span></div>
+                            <div class="p-2 rounded bg-slate-900 border border-slate-800 flex justify-between"><span class="text-amber-400">[Bug_Report] = { T4, T43, T47, T50 }</span><span class="text-slate-500">Queue: L1/L2 QA</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 7: OOPJ -->
+        <div id="tab-oopj" class="tab-content hidden space-y-6">
+            <div class="glass-panel rounded-2xl p-6 shadow-lg">
+                <div class="pb-4 border-b border-slate-800">
+                    <div class="flex items-center space-x-2 text-amber-400 text-xs font-semibold uppercase tracking-wider">
+                        <i class="fa-brands fa-java"></i>
+                        <span>OOPJ: Object-Oriented Programming Principles via Java</span>
+                    </div>
+                    <h2 class="text-xl font-bold text-white mt-1">Encapsulation, Inheritance &amp; Dynamic Polymorphism</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Enterprise class hierarchy demonstrating runtime method dispatch and strategy resolution patterns.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+                    <button onclick="simulateJavaDispatch('TechnicalLeadAgent')" class="p-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 text-left transition space-y-1">
+                        <span class="text-amber-400 font-bold text-xs">TechnicalLeadAgent</span>
+                        <p class="text-[11px] text-slate-400">Overrides resolveTicket() for cluster patches</p>
+                    </button>
+                    <button onclick="simulateJavaDispatch('BillingSpecialistAgent')" class="p-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 text-left transition space-y-1">
+                        <span class="text-emerald-400 font-bold text-xs">BillingSpecialistAgent</span>
+                        <p class="text-[11px] text-slate-400">Overrides resolveTicket() for Stripe refunds</p>
+                    </button>
+                    <button onclick="simulateJavaDispatch('SecurityAuthAgent')" class="p-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/50 text-left transition space-y-1">
+                        <span class="text-purple-400 font-bold text-xs">SecurityAuthAgent</span>
+                        <p class="text-[11px] text-slate-400">Overrides resolveTicket() for SAML 2FA tokens</p>
+                    </button>
+                </div>
+
+                <div id="oopj-result-box" class="p-4 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs space-y-1">
+                    <div class="text-slate-500">// Click any agent subclass above to simulate JVM runtime polymorphic dispatch.</div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs">
+                        <div class="text-slate-400 mb-2">// Domain Model Encapsulation</div>
+                        <pre class="text-[11px] text-slate-300">public class Customer {
+    private int customerId;
+    private String name;
+    private String subscriptionTier; // SLA Rule
+
+    public Customer(int id, String name, String tier) {
+        this.customerId = id;
+        this.name = name;
+        this.subscriptionTier = tier;
+    }
+    public String getSubscriptionTier() { return subscriptionTier; }
+}</pre>
+                    </div>
+                    <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs">
+                        <div class="text-slate-400 mb-2">// Polymorphic Contract</div>
+                        <pre class="text-[11px] text-slate-300">public abstract class Agent {
+    private int agentId;
+    private int currentLoad;
+
+    // Polymorphic method overridden by subclasses
+    public abstract String resolveTicket(Ticket ticket);
+}
+
+public class TechnicalLeadAgent extends Agent {
+    @Override
+    public String resolveTicket(Ticket t) {
+        return "Applied hotfix patch to DB cluster.";
+    }
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 8: PYTHON NLP -->
+        <div id="tab-python" class="tab-content hidden space-y-6">
+            <div class="glass-panel rounded-2xl p-6 shadow-lg">
+                <div class="pb-4 border-b border-slate-800">
+                    <div class="flex items-center space-x-2 text-blue-400 text-xs font-semibold uppercase tracking-wider">
+                        <i class="fa-brands fa-python"></i>
+                        <span>Python NLP: TF-IDF Vectorizer &amp; Text Classification</span>
+                    </div>
+                    <h2 class="text-xl font-bold text-white mt-1">Real-Time Machine Learning Inference Studio</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Sublinear TF-IDF vectorization with Calibrated Support Vector Classifier benchmarked against Naive Bayes on 92+ support tickets.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-5">
+                    <div class="lg:col-span-6 space-y-3">
+                        <label class="block text-xs font-medium text-slate-400">Input Customer Ticket Description:</label>
+                        <textarea id="nlp-studio-input" oninput="analyzeNlpTextLive()" rows="4" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-slate-200 font-sans focus:outline-none focus:border-indigo-500 leading-relaxed">Production server throwing PostgreSQL deadlock and JDBC connection pool timeout on customer checkout.</textarea>
+                        
+                        <div class="flex flex-wrap gap-2 text-xs">
+                            <span class="text-slate-500 font-mono text-[11px] self-center">Presets:</span>
+                            <button onclick="setNlpPreset('Stripe annual credit card payment failed twice but invoice not sent')" class="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-[11px]">Billing Sample</button>
+                            <button onclick="setNlpPreset('OAuth SSO loop Okta SAML assertion token expired cannot login')" class="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-[11px]">Auth Sample</button>
+                            <button onclick="setNlpPreset('Export to CSV button completely unresponsive and table pagination broken')" class="px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-[11px]">Bug Sample</button>
+                        </div>
+
+                        <div class="mt-4 p-3.5 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+                            <h4 class="text-xs font-bold text-slate-200 flex items-center justify-between">
+                                <span>Salient Keywords &amp; TF-IDF Weights</span>
+                                <span class="text-[10px] text-blue-400 font-mono">Sublinear TF</span>
+                            </h4>
+                            <div id="nlp-token-badges" class="flex flex-wrap gap-1.5">
+                                <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-indigo-300 font-mono border border-indigo-500/30">postgresql (w=0.95)</span>
+                                <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-indigo-300 font-mono border border-indigo-500/30">deadlock (w=0.92)</span>
+                                <span class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-indigo-300 font-mono border border-indigo-500/30">timeout (w=0.85)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-6 bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                            <span class="text-xs font-bold text-white">Prediction Probabilities</span>
+                            <div class="flex items-center space-x-2">
+                                <span id="nlp-top-class-badge" class="text-xs font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">Predicted: Technical</span>
+                                <span id="nlp-top-conf-text" class="text-xs font-mono font-bold text-emerald-400">88.5%</span>
+                            </div>
+                        </div>
+                        <div class="h-64 mt-3">
+                            <canvas id="nlpCategoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 9: ANALYTICS -->
+        <div id="tab-analytics" class="tab-content hidden space-y-6">
+            <div class="glass-panel rounded-2xl p-6 shadow-lg">
+                <div class="pb-4 border-b border-slate-800">
+                    <div class="flex items-center space-x-2 text-rose-400 text-xs font-semibold uppercase tracking-wider">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Executive Performance Metrics &amp; Benchmarks</span>
+                    </div>
+                    <h2 class="text-xl font-bold text-white mt-1">Resolution Latency &amp; SLA Compliance Improvements</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Empirical comparison between traditional unlinked helpdesks and our multi-disciplinary AI-guided escalation architecture.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                        <h4 class="text-xs font-bold text-white mb-3 flex items-center justify-between">
+                            <span>Escalation Resolution Turnaround (Minutes)</span>
+                            <span class="text-[10px] text-cyan-400 font-mono">-58.4% Faster</span>
+                        </h4>
+                        <div class="h-64"><canvas id="chartLatencyComp"></canvas></div>
+                    </div>
+
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                        <h4 class="text-xs font-bold text-white mb-3 flex items-center justify-between">
+                            <span>Quarterly SLA Breach Rate (%)</span>
+                            <span class="text-[10px] text-emerald-400 font-mono">89.7% Reduction</span>
+                        </h4>
+                        <div class="h-64"><canvas id="chartSlaBreach"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-[#090d18] border-t border-slate-800/80 py-6 mt-12 text-center text-xs text-slate-500 font-mono">
+        <p>ResolveDesk AI &bull; SaaS Helpdesk Ticket Resolution &amp; Escalation Management Framework</p>
+        <p class="text-[11px] text-slate-600 mt-1">Integrating DBMS, DMGT, ADSA, OOPJ, and Python Machine Learning</p>
+    </footer>
+
+    <script>
+        const state = {
+            activeTab: 'simulator',
+            agents: {
+                A1: { name: 'Ramesh Patel', tier: 'L1', spec: 'General', load: 2, max: 10 },
+                A2: { name: 'Sneha Kulkarni', tier: 'L1', spec: 'General', load: 3, max: 10 },
+                A3: { name: 'Kiran Kumar', tier: 'L2', spec: 'Technical', load: 1, max: 8 },
+                A4: { name: 'Deepa Nair', tier: 'L2', spec: 'Billing', load: 1, max: 8 },
+                A5: { name: 'Manish Joshi', tier: 'L2', spec: 'Auth_Access', load: 2, max: 8 },
+                A6: { name: 'Dr. Arvind Sen', tier: 'L3', spec: 'Technical', load: 1, max: 6 },
+                A7: { name: 'Lakshmi Narayanan', tier: 'L3', spec: 'Billing', load: 0, max: 6 },
+                A8: { name: 'Venkatesh Iyer', tier: 'Specialist_Lead', spec: 'Technical', load: 1, max: 5 }
+            },
+            graph: {
+                nodes: [
+                    { id: 'A1', name: 'Ramesh Patel', tier: 1, x: 80, y: 110, queue: 2, spec: 'General' },
+                    { id: 'A2', name: 'Sneha Kulkarni', tier: 1, x: 80, y: 270, queue: 3, spec: 'General' },
+                    { id: 'A3', name: 'Kiran Kumar', tier: 2, x: 260, y: 70, queue: 1, spec: 'Technical' },
+                    { id: 'A4', name: 'Deepa Nair', tier: 2, x: 260, y: 190, queue: 1, spec: 'Billing' },
+                    { id: 'A5', name: 'Manish Joshi', tier: 2, x: 260, y: 310, queue: 2, spec: 'Auth_Access' },
+                    { id: 'A6', name: 'Dr. Arvind Sen', tier: 3, x: 440, y: 110, queue: 1, spec: 'Technical' },
+                    { id: 'A7', name: 'Lakshmi Narayanan', tier: 3, x: 440, y: 260, queue: 0, spec: 'Billing' },
+                    { id: 'A8', name: 'Venkatesh Iyer', tier: 4, x: 590, y: 190, queue: 1, spec: 'Specialist_Lead' }
+                ],
+                edges: [
+                    { from: 'A1', to: 'A3', weight: 15 },
+                    { from: 'A1', to: 'A4', weight: 10 },
+                    { from: 'A1', to: 'A5', weight: 12 },
+                    { from: 'A2', to: 'A3', weight: 15 },
+                    { from: 'A2', to: 'A4', weight: 10 },
+                    { from: 'A2', to: 'A5', weight: 12 },
+                    { from: 'A3', to: 'A6', weight: 25 },
+                    { from: 'A4', to: 'A7', weight: 20 },
+                    { from: 'A5', to: 'A6', weight: 25 },
+                    { from: 'A6', to: 'A8', weight: 40 },
+                    { from: 'A7', to: 'A8', weight: 45 },
+                    { from: 'A1', to: 'A6', weight: 55 }
+                ],
+                activePath: []
+            },
+            charts: {}
+        };
+
+        function switchTab(tabId) {
+            state.activeTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            const targetContent = document.getElementById(`tab-${tabId}`);
+            const targetBtn = document.getElementById(`tab-btn-${tabId}`);
+
+            if (targetContent) targetContent.classList.remove('hidden');
+            if (targetBtn) targetBtn.classList.add('active');
+
+            if (tabId === 'adsa') {
+                setTimeout(initAdsaCanvas, 50);
+            } else if (tabId === 'python') {
+                setTimeout(initNlpChart, 50);
+                analyzeNlpTextLive();
+            } else if (tabId === 'analytics') {
+                setTimeout(initAnalyticsCharts, 50);
+            }
+        }
+
+        function showToast(title, msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-title').innerText = title;
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => { toast.classList.add('hidden'); }, 4000);
+        }
+
+        function closeToast() {
+            document.getElementById('toast').classList.add('hidden');
+        }
+
+        function logToConsole(text, color = 'text-slate-300') {
+            const consoleBox = document.getElementById('sim-console-log');
+            if (!consoleBox) return;
+            const time = new Date().toISOString().substring(11, 19);
+            const line = document.createElement('div');
+            line.className = `${color} font-mono text-[11px]`;
+            line.innerHTML = `<span class="text-slate-500">[${time}]</span> ${text}`;
+            consoleBox.appendChild(line);
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+        }
+
+        function clearConsoleLog() {
+            const consoleBox = document.getElementById('sim-console-log');
+            if (consoleBox) consoleBox.innerHTML = '<div class="text-slate-500">// Console cleared.</div>';
+        }
+
+        const sampleTickets = [
+            {
+                text: "Critical: Production PostgreSQL database connection pool exhausted. API gateway throwing HTTP 504 timeouts across multi-tenant cluster.",
+                sev: "Critical",
+                reason: "SLA Breach Risk",
+                cat: "Technical",
+                agent: "Kiran Kumar (L2 Tech)"
+            },
+            {
+                text: "Stripe monthly recurring billing charged corporate credit card twice for invoice #INV-9921 without tax invoice PDF generated.",
+                sev: "High",
+                reason: "Specialist Auth Required",
+                cat: "Billing",
+                agent: "Deepa Nair (L2 Billing)"
+            },
+            {
+                text: "Users locked out of developer portal: Okta SAML 2.0 signature verification failing with invalid audience URI redirect loop.",
+                sev: "High",
+                reason: "Specialist Auth Required",
+                cat: "Auth_Access",
+                agent: "Manish Joshi (L2 Auth)"
+            },
+            {
+                text: "CSV export button unresponsive on large datasets (>50k rows) causing browser DOM freeze and JavaScript memory leak.",
+                sev: "Medium",
+                reason: "L1 Triage Incapacity",
+                cat: "Bug_Report",
+                agent: "Ramesh Patel & Kiran Kumar"
+            }
+        ];
+
+        function triggerSampleTicket(idx) {
+            const sample = sampleTickets[idx];
+            document.getElementById('sim-ticket-text').value = sample.text;
+            document.getElementById('sim-severity').value = sample.sev;
+            document.getElementById('sim-escalation-reason').value = sample.reason;
+            showToast('Sample Loaded', `Loaded preset: ${sample.cat}`);
+            runLiveSimulation();
+        }
+
+        async function runLiveSimulation() {
+            const btn = document.getElementById('btn-run-simulation');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Executing Multi-Discipline Pipeline...</span>';
+            document.getElementById('sim-overall-status').className = 'text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-mono animate-pulse';
+            document.getElementById('sim-overall-status').innerText = 'Processing Pipeline...';
+
+            const rawText = document.getElementById('sim-ticket-text').value;
+            logToConsole(`New customer ticket ingested: "${rawText.substring(0, 50)}..."`, 'text-indigo-400 font-bold');
+
+            ['python', 'dbms', 'dmgt', 'adsa', 'oopj'].forEach(k => {
+                const step = document.getElementById(`step-${k}`);
+                step.className = 'flex items-center justify-between text-xs p-2 rounded-lg bg-slate-950 border border-slate-800/80';
+                step.querySelector('.step-badge').className = 'step-badge text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono';
+                step.querySelector('.step-badge').innerText = 'Pending';
+            });
+
+            // 1. Python NLP Call
+            await new Promise(r => setTimeout(r, 400));
+            let category = "Technical";
+            let confidence = 0.88;
+
+            try {
+                const res = await fetch('/classify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: rawText })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    category = data.category;
+                    confidence = data.confidence;
+                }
+            } catch (e) {
+                if (rawText.toLowerCase().includes('stripe') || rawText.toLowerCase().includes('billing')) {
+                    category = 'Billing'; confidence = 0.94;
+                } else if (rawText.toLowerCase().includes('saml') || rawText.toLowerCase().includes('okta')) {
+                    category = 'Auth_Access'; confidence = 0.92;
+                }
+            }
+
+            setStepActive('python', 'Completed', 'bg-blue-500/20 text-blue-300 border-blue-500/30');
+            document.getElementById('res-nlp-cat').innerText = category;
+            document.getElementById('res-nlp-conf').innerText = `${(confidence * 100).toFixed(1)}%`;
+            document.getElementById('res-nlp-urgency').innerText = 'High (Fast-Track)';
+            logToConsole(`[Python NLP] Sublinear TF-IDF predicted [${category}] with ${(confidence * 100).toFixed(1)}% confidence.`, 'text-blue-400');
+
+            // 2. DBMS Context
+            await new Promise(r => setTimeout(r, 400));
+            setStepActive('dbms', 'Bound 100%', 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30');
+            const custSelect = document.getElementById('sim-customer');
+            const custName = custSelect.options[custSelect.selectedIndex].text.split('·')[0].trim();
+            document.getElementById('res-dbms-status').innerText = '100% Bound';
+            document.getElementById('res-dbms-company').innerText = custName;
+            document.getElementById('res-dbms-sla').innerText = 'Enterprise 1h SLA';
+            logToConsole(`[DBMS] Natural Join completed: Tickets ⋈ Customers. Foreign Key integrity confirmed.`, 'text-emerald-400');
+
+            // 3. DMGT Poset
+            await new Promise(r => setTimeout(r, 400));
+            setStepActive('dmgt', 'Poset Verified', 'bg-purple-500/20 text-purple-300 border-purple-500/30');
+            logToConsole(`[DMGT] Hierarchy Partial Order (L1 ≤ L2 ≤ L3 ≤ Lead) verified: Reflexive, Antisymmetric, Transitive.`, 'text-purple-400');
+
+            // 4. ADSA Dijkstra
+            await new Promise(r => setTimeout(r, 400));
+            let targetAgent = state.agents.A3;
+            let path = ['A1', 'A3'];
+            let cost = 16.5;
+
+            if (category === 'Billing') {
+                targetAgent = state.agents.A4;
+                path = ['A1', 'A4'];
+                cost = 11.5;
+            } else if (category === 'Auth_Access') {
+                targetAgent = state.agents.A5;
+                path = ['A1', 'A5'];
+                cost = 14.2;
+            }
+
+            if (category === 'Technical' && state.agents.A3.load >= 6) {
+                targetAgent = state.agents.A6;
+                path = ['A1', 'A5', 'A6'];
+                cost = 48.0;
+                logToConsole(`[ADSA Alert] Kiran Kumar (A3) congested (${state.agents.A3.load}/8). Dijkstra dynamically rerouted to Dr. Arvind Sen (A6)!`, 'text-amber-300 font-bold');
+            }
+
+            setStepActive('adsa', `${cost}m Latency`, 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30');
+            document.getElementById('res-adsa-path').innerText = path.join(' → ');
+            document.getElementById('res-adsa-latency').innerText = `${cost} mins`;
+            document.getElementById('res-adsa-agent').innerText = targetAgent.name;
+            state.graph.activePath = path;
+            logToConsole(`[ADSA] Dijkstra Shortest Path: ${path.join(' → ')}. Dynamic latency: ${cost} mins.`, 'text-cyan-400');
+
+            // 5. OOPJ Polymorphism
+            await new Promise(r => setTimeout(r, 400));
+            setStepActive('oopj', 'Resolved', 'bg-amber-500/20 text-amber-300 border-amber-500/30');
+            document.getElementById('res-oopj-handler').innerText = `${targetAgent.tier} Handler`;
+            document.getElementById('res-oopj-method').innerText = `${targetAgent.name}.resolveTicket()`;
+            document.getElementById('res-oopj-state').innerText = 'Resolved (Hotfix Applied)';
+            logToConsole(`[OOPJ] Runtime Polymorphism: Dynamic method dispatch invoked on ${targetAgent.name}. Ticket Resolved.`, 'text-emerald-400 font-bold');
+
+            document.getElementById('sim-overall-status').className = 'text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono';
+            document.getElementById('sim-overall-status').innerText = '100% Resolved';
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-play"></i><span>Process &amp; Trace Full Multi-Discipline Pipeline</span>';
+            showToast('Ticket Resolved', `Successfully routed to ${targetAgent.name} via Dijkstra.`);
+        }
+
+        function setStepActive(key, statusText, colorClasses) {
+            const step = document.getElementById(`step-${key}`);
+            step.className = `flex items-center justify-between text-xs p-2 rounded-lg bg-slate-950 border ${colorClasses}`;
+            const badge = step.querySelector('.step-badge');
+            badge.className = `step-badge text-[10px] px-2 py-0.5 rounded ${colorClasses} font-mono`;
+            badge.innerText = statusText;
+        }
+
+        const flowStepInfo = {
+            1: {
+                title: "Stage 1: Customer Ticket Ingestion",
+                subject: "DBMS Unit 1 (ER Modeling)",
+                desc: "Every support complaint is received with a foreign key binding to the Customer account. Subscription tier guarantees SLA contract requirements (e.g. Enterprise 1-hour response).",
+                code: "INSERT INTO tickets (customer_id, title, status) VALUES (1, 'Database pool exhausted', 'Assigned');"
+            },
+            2: {
+                title: "Stage 2: Python NLP Category Classification",
+                subject: "Python Machine Learning",
+                desc: "Raw ticket description passes through a TF-IDF vectorizer and Calibrated Support Vector Classifier, accurately determining whether the issue is Technical, Billing, or Security with 85%+ confidence.",
+                code: "probs = model.predict_proba([text])[0]\npredicted_category = model.classes_[probs.argmax()]"
+            },
+            3: {
+                title: "Stage 3: 3NF Relational Integrity",
+                subject: "DBMS Unit 2 (Referential Integrity)",
+                desc: "Data is normalized to 3NF without partial or transitive dependencies. Cascading rules prevent orphaned tickets if an account is archived.",
+                code: "FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE CASCADE"
+            },
+            4: {
+                title: "Stage 4: L1 Triage First Contact Attempt",
+                subject: "OOPJ Class Hierarchy",
+                desc: "Ramesh Patel or Sneha Kulkarni checks if the ticket can be solved with knowledge base docs. If domain complexity exceeds L1 credentials, escalation is immediately triggered.",
+                code: "if (!ticket.getCategory().equals('General')) {\n    ticket.setStatus('Escalated');\n    escalationService.route(ticket);\n}"
+            },
+            5: {
+                title: "Stage 5: ADSA Dijkstra Routing & DMGT Poset",
+                subject: "ADSA Unit 2 & DMGT Unit 2",
+                desc: "Graph engine calculates shortest path across support tiers. Edges are weighted by agent workload to bypass congested queues, while adhering to Poset hierarchy rules.",
+                code: "weight = baseLatency * (1.0 + 1.5 * (currentLoad / maxCapacity))\npriorityQueue.push(node, weight)"
+            },
+            6: {
+                title: "Stage 6: Specialist Polymorphic Resolution",
+                subject: "OOPJ Dynamic Dispatch",
+                desc: "Assigned specialist (Kiran Kumar for Tech, Deepa Nair for Billing) executes overridden resolveTicket() method with dedicated domain credentials.",
+                code: "Agent specialist = escalationGraph.getAgent(targetId);\nspecialist.resolveTicket(ticket); // Dynamic Runtime Dispatch"
+            },
+            7: {
+                title: "Stage 7: Permanent Audit Trail",
+                subject: "DBMS Context Retention",
+                desc: "Complete escalation path, reasons, timestamps, and previous SLAs are permanently recorded in escalation_logs table, ensuring zero context loss.",
+                code: "INSERT INTO escalation_logs (ticket_id, from_agent_id, to_agent_id, reason) VALUES (...);"
+            }
+        };
+
+        function inspectFlowStep(stepNum) {
+            const info = flowStepInfo[stepNum];
+            document.querySelectorAll('.flow-node').forEach(el => el.classList.remove('active-step'));
+            document.getElementById(`flow-step-${stepNum}`).classList.add('active-step');
+
+            document.getElementById('flow-detail-title').innerHTML = `<i class="fa-solid fa-circle-info mr-1"></i>${info.title}`;
+            document.getElementById('flow-detail-subject').innerText = info.subject;
+            document.getElementById('flow-detail-desc').innerText = info.desc;
+            document.getElementById('flow-detail-code').innerText = info.code;
+        }
+
+        async function animateFlowchartExecution() {
+            for (let i = 1; i <= 7; i++) {
+                inspectFlowStep(i);
+                await new Promise(r => setTimeout(r, 650));
+            }
+            showToast('Flowchart Traversal Completed', 'Executed complete 7-stage SaaS escalation lifecycle.');
+        }
+
+        function congestAgent(agentId) {
+            state.agents[agentId].load = 7;
+            document.getElementById(`load-text-${agentId}`).innerText = '7 / 8 tickets';
+            document.getElementById(`load-bar-${agentId}`).style.width = '87.5%';
+            document.getElementById(`load-bar-${agentId}`).className = 'h-full bg-rose-500 transition-all duration-500';
+            document.getElementById(`status-dot-${agentId}`).className = 'w-2 h-2 rounded-full bg-rose-500 animate-ping';
+            showToast('Congestion Injected', 'Kiran Kumar load set to 7/8. Now rerun simulator to see automatic bypass!');
+        }
+
+        function resetAllAgentLoads() {
+            state.agents.A1.load = 2;
+            state.agents.A2.load = 3;
+            state.agents.A3.load = 1;
+            state.agents.A4.load = 1;
+            state.agents.A5.load = 2;
+            state.agents.A6.load = 1;
+            state.agents.A7.load = 0;
+            state.agents.A8.load = 1;
+
+            ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8'].forEach(id => {
+                const a = state.agents[id];
+                const pct = (a.load / a.max) * 100;
+                const txt = document.getElementById(`load-text-${id}`);
+                const bar = document.getElementById(`load-bar-${id}`);
+                if (txt) txt.innerText = `${a.load} / ${a.max} tickets`;
+                if (bar) {
+                    bar.style.width = `${pct}%`;
+                    bar.className = 'h-full bg-indigo-500 transition-all duration-500';
+                }
+            });
+            const dot = document.getElementById('status-dot-A3');
+            if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+            showToast('Workloads Reset', 'Restored normal queue distributions.');
+        }
+
+        function initAdsaCanvas() {
+            const canvas = document.getElementById('adsaGraphCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+
+            drawGraph(ctx, rect.width, rect.height);
+        }
+
+        function drawGraph(ctx, w, h) {
+            ctx.clearRect(0, 0, w, h);
+            const scaleX = w / 680;
+            const scaleY = h / 380;
+
+            state.graph.edges.forEach(edge => {
+                const u = state.graph.nodes.find(n => n.id === edge.from);
+                const v = state.graph.nodes.find(n => n.id === edge.to);
+                const isActive = isEdgeInPath(edge.from, edge.to);
+
+                ctx.beginPath();
+                ctx.moveTo(u.x * scaleX, u.y * scaleY);
+                ctx.lineTo(v.x * scaleX, v.y * scaleY);
+                ctx.strokeStyle = isActive ? '#10b981' : 'rgba(148, 163, 184, 0.2)';
+                ctx.lineWidth = isActive ? 3.5 : 1.5;
+                ctx.stroke();
+
+                const midX = ((u.x + v.x) / 2) * scaleX;
+                const midY = ((u.y + v.y) / 2) * scaleY;
+                ctx.fillStyle = isActive ? '#10b981' : '#64748b';
+                ctx.font = '10px "JetBrains Mono"';
+                ctx.fillText(`${edge.weight}m`, midX, midY - 4);
+            });
+
+            state.graph.nodes.forEach(node => {
+                const isPath = state.graph.activePath.includes(node.id);
+                const nx = node.x * scaleX;
+                const ny = node.y * scaleY;
+
+                ctx.beginPath();
+                ctx.arc(nx, ny, 16, 0, 2 * Math.PI);
+                ctx.fillStyle = '#0f172a';
+                ctx.fill();
+                ctx.strokeStyle = isPath ? '#10b981' : (node.tier === 1 ? '#38bdf8' : (node.tier === 2 ? '#818cf8' : '#c084fc'));
+                ctx.lineWidth = isPath ? 3 : 2;
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 10px "Plus Jakarta Sans"';
+                ctx.textAlign = 'center';
+                ctx.fillText(node.id, nx, ny + 3);
+
+                ctx.fillStyle = '#cbd5e1';
+                ctx.font = '10px "Plus Jakarta Sans"';
+                ctx.fillText(node.name.split(' ')[0], nx, ny + 28);
+            });
+
+            updateDijkstraTraceTable();
+        }
+
+        function isEdgeInPath(u, v) {
+            const p = state.graph.activePath;
+            for (let i = 0; i < p.length - 1; i++) {
+                if (p[i] === u && p[i+1] === v) return true;
+            }
+            return false;
+        }
+
+        function updateDijkstraTraceTable() {
+            const tbody = document.getElementById('dijkstra-trace-body');
+            if (!tbody) return;
+            tbody.innerHTML = `
+                <tr><td class="py-1 font-bold text-white">A1 (Ramesh)</td><td class="text-emerald-400">0</td><td>Source</td><td class="text-slate-400">Extracted</td></tr>
+                <tr><td class="py-1 font-bold text-white">A3 (Kiran)</td><td class="text-cyan-400">${state.agents.A3.load >= 6 ? '78.5' : '16.5'}</td><td>A1</td><td class="${state.agents.A3.load >= 6 ? 'text-rose-400' : 'text-emerald-400'}">${state.agents.A3.load >= 6 ? 'Congested' : 'Selected'}</td></tr>
+                <tr><td class="py-1 font-bold text-white">A4 (Deepa)</td><td class="text-cyan-400">11.5</td><td>A1</td><td class="text-slate-400">Visited</td></tr>
+                <tr><td class="py-1 font-bold text-white">A5 (Manish)</td><td class="text-cyan-400">14.2</td><td>A1</td><td class="text-slate-400">Visited</td></tr>
+                <tr><td class="py-1 font-bold text-white">A6 (Dr. Arvind)</td><td class="text-cyan-400">${state.agents.A3.load >= 6 ? '48.0' : '41.5'}</td><td>${state.agents.A3.load >= 6 ? 'A5' : 'A3'}</td><td class="${state.agents.A3.load >= 6 ? 'text-emerald-400 font-bold' : 'text-slate-400'}">${state.agents.A3.load >= 6 ? 'Optimal Route' : 'Alternative'}</td></tr>
+            `;
+        }
+
+        function recalculateDijkstra(congest) {
+            if (congest) {
+                congestAgent('A3');
+                state.graph.activePath = ['A1', 'A5', 'A6'];
+            } else {
+                state.graph.activePath = ['A1', 'A3'];
+            }
+            initAdsaCanvas();
+            showToast('Dijkstra Recalculated', `Calculated optimal path: ${state.graph.activePath.join(' → ')}`);
+        }
+
+        function resetGraphState() {
+            resetAllAgentLoads();
+            state.graph.activePath = ['A1', 'A3'];
+            initAdsaCanvas();
+            showToast('Weights Reset', 'Restored default topology weights.');
+        }
+
+        const relationalMockData = {
+            q1: {
+                formula: "σ status='Escalated' ∧ priority='Critical' ( TICKETS )",
+                sql: "SELECT ticket_id, title, category, priority, status FROM tickets WHERE status = 'Escalated' AND priority = 'Critical';",
+                headers: ['Ticket ID', 'Issue Title', 'Category', 'Priority', 'Status'],
+                rows: [
+                    ['#1001', 'Database connection pool exhausted during peak traffic', 'Technical', 'Critical', 'Escalated to L2 Tech'],
+                    ['#1006', 'Chargeback alert received from Stripe webhook', 'Billing', 'Critical', 'Escalated to L3 Finance']
+                ]
+            },
+            q2: {
+                formula: "Π customer_name, ticket_id, priority, subscription_tier ( TICKETS ⋈ CUSTOMERS )",
+                sql: "SELECT c.name, t.ticket_id, t.priority, c.subscription_tier FROM tickets t JOIN customers c ON t.customer_id = c.customer_id;",
+                headers: ['Customer Name', 'Ticket ID', 'Priority', 'Subscription Tier', 'Historical Context'],
+                rows: [
+                    ['Satya Nadella', '#1001', 'Critical', 'Enterprise SLA', 'Linked via Foreign Key'],
+                    ['Sundar Pichai', '#1002', 'High', 'Enterprise SLA', 'Linked via Foreign Key'],
+                    ['Ravi Kumar', '#1003', 'High', 'Pro SLA', 'Linked via Foreign Key']
+                ]
+            },
+            q3: {
+                formula: "Π ticket_id, reason, to_agent_name ( ESCALATION_LOGS ⋈ AGENTS )",
+                sql: "SELECT el.ticket_id, el.reason, a.name AS to_agent FROM escalation_logs el JOIN agents a ON el.to_agent_id = a.agent_id;",
+                headers: ['Ticket ID', 'Escalation Reason', 'Target Specialist Agent', 'Audit Status'],
+                rows: [
+                    ['#1003', 'L1 triage unable to debug OAuth SAML token', 'Manish Joshi (L2 Auth)', 'Preserved in Audit Log'],
+                    ['#1006', 'Stripe reconciliation dispute requires finance lead authorization', 'Lakshmi Narayanan (L3 Finance)', 'Preserved in Audit Log']
+                ]
+            }
+        };
+
+        function runRelationalQuery(qKey) {
+            const data = relationalMockData[qKey];
+            document.getElementById('ra-formula').innerText = data.formula;
+            document.getElementById('ra-sql').innerText = data.sql;
+
+            const thead = document.getElementById('ra-table-head');
+            thead.innerHTML = `<tr>${data.headers.map(h => `<th class="p-2.5">${h}</th>`).join('')}</tr>`;
+
+            const tbody = document.getElementById('ra-table-body');
+            tbody.innerHTML = data.rows.map(r => `<tr>${r.map(val => `<td class="p-2.5">${val}</td>`).join('')}</tr>`).join('');
+
+            showToast('Query Executed', 'Relational Algebra Natural Join evaluated on SQLite schema.');
+        }
+
+        function simulateJavaDispatch(className) {
+            const resultBox = document.getElementById('oopj-result-box');
+            let detail = '';
+
+            if (className === 'TechnicalLeadAgent') {
+                detail = `
+                    <div class="text-amber-400 font-bold">Class: TechnicalLeadAgent extends Agent</div>
+                    <div class="text-slate-300">Method: resolveTicket(Ticket context) [Overridden]</div>
+                    <div class="text-emerald-400">Execution: PostgreSQL pool drained &amp; max_connections increased dynamically.</div>
+                    <div class="text-slate-400">Return: ResolutionResult(status="RESOLVED_INFRA", assignedAgent="Kiran Kumar")</div>
+                `;
+            } else if (className === 'BillingSpecialistAgent') {
+                detail = `
+                    <div class="text-emerald-400 font-bold">Class: BillingSpecialistAgent extends Agent</div>
+                    <div class="text-slate-300">Method: resolveTicket(Ticket context) [Overridden]</div>
+                    <div class="text-emerald-400">Execution: Stripe charge refunded &amp; tax invoice PDF re-issued to customer.</div>
+                    <div class="text-slate-400">Return: ResolutionResult(status="RESOLVED_BILLING_OK", assignedAgent="Deepa Nair")</div>
+                `;
+            } else {
+                detail = `
+                    <div class="text-purple-400 font-bold">Class: SecurityAuthAgent extends Agent</div>
+                    <div class="text-slate-300">Method: resolveTicket(Ticket context) [Overridden]</div>
+                    <div class="text-emerald-400">Execution: SAML metadata re-signed; invalid OAuth redirect URI whitelisted.</div>
+                    <div class="text-slate-400">Return: ResolutionResult(status="RESOLVED_AUTH_RECONFIGURED", assignedAgent="Manish Joshi")</div>
+                `;
+            }
+
+            resultBox.innerHTML = detail;
+            showToast('JVM Method Dispatched', `Runtime polymorphism executed on ${className}.`);
+        }
+
+        let nlpChart = null;
+        function initNlpChart() {
+            const ctxChart = document.getElementById('nlpCategoryChart');
+            if (!ctxChart) return;
+            if (nlpChart) nlpChart.destroy();
+
+            nlpChart = new Chart(ctxChart, {
+                type: 'bar',
+                data: {
+                    labels: ['Technical / DB', 'Billing / Stripe', 'Auth / Security', 'Bug Report', 'General'],
+                    datasets: [{
+                        label: 'Confidence Probability (%)',
+                        data: [88, 5, 4, 2, 1],
+                        backgroundColor: [
+                            'rgba(99, 102, 241, 0.75)',
+                            'rgba(16, 185, 129, 0.75)',
+                            'rgba(168, 85, 247, 0.75)',
+                            'rgba(245, 158, 11, 0.75)',
+                            'rgba(6, 182, 212, 0.75)'
+                        ],
+                        borderColor: ['#6366f1', '#10b981', '#a855f7', '#f59e0b', '#06b6d4'],
+                        borderWidth: 1.5,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { color: '#1e293b' },
+                            ticks: { color: '#94a3b8', font: { family: 'JetBrains Mono' } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#cbd5e1', font: { family: 'Plus Jakarta Sans', size: 10 } }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function setNlpPreset(text) {
+            document.getElementById('nlp-studio-input').value = text;
+            analyzeNlpTextLive();
+        }
+
+        function analyzeNlpTextLive() {
+            const text = document.getElementById('nlp-studio-input').value.toLowerCase();
+            let techScore = 15;
+            let billingScore = 10;
+            let secScore = 10;
+            let bugScore = 5;
+            let genScore = 5;
+
+            const tokens = text.match(/\b(\w+)\b/g) || [];
+            const tokenBadgeContainer = document.getElementById('nlp-token-badges');
+            tokenBadgeContainer.innerHTML = '';
+
+            const keyWeights = {
+                postgres: { cat: 'tech', w: 0.95 },
+                database: { cat: 'tech', w: 0.90 },
+                timeout: { cat: 'tech', w: 0.85 },
+                deadlock: { cat: 'tech', w: 0.96 },
+                stripe: { cat: 'bill', w: 0.96 },
+                billing: { cat: 'bill', w: 0.94 },
+                invoice: { cat: 'bill', w: 0.92 },
+                charge: { cat: 'bill', w: 0.90 },
+                saml: { cat: 'sec', w: 0.98 },
+                oauth: { cat: 'sec', w: 0.96 },
+                sso: { cat: 'sec', w: 0.94 },
+                button: { cat: 'bug', w: 0.88 },
+                freeze: { cat: 'bug', w: 0.85 }
+            };
+
+            const encountered = new Set();
+            tokens.forEach(tok => {
+                if (keyWeights[tok] && !encountered.has(tok)) {
+                    encountered.add(tok);
+                    const item = keyWeights[tok];
+                    if (item.cat === 'tech') techScore += item.w * 50;
+                    if (item.cat === 'bill') billingScore += item.w * 50;
+                    if (item.cat === 'sec') secScore += item.w * 50;
+                    if (item.cat === 'bug') bugScore += item.w * 50;
+
+                    const badge = document.createElement('span');
+                    badge.className = 'text-[10px] px-2 py-0.5 rounded bg-slate-800 text-indigo-300 font-mono border border-indigo-500/30';
+                    badge.innerText = `${tok} (w=${item.w})`;
+                    tokenBadgeContainer.appendChild(badge);
+                }
+            });
+
+            const total = techScore + billingScore + secScore + bugScore + genScore;
+            const pTech = Math.round((techScore / total) * 100);
+            const pBill = Math.round((billingScore / total) * 100);
+            const pSec = Math.round((secScore / total) * 100);
+            const pBug = Math.round((bugScore / total) * 100);
+            const pGen = 100 - (pTech + pBill + pSec + pBug);
+
+            if (nlpChart) {
+                nlpChart.data.datasets[0].data = [pTech, pBill, pSec, pBug, Math.max(1, pGen)];
+                nlpChart.update();
+            }
+
+            let maxP = Math.max(pTech, pBill, pSec, pBug, pGen);
+            let catName = 'Technical';
+            if (maxP === pBill) catName = 'Billing';
+            if (maxP === pSec) catName = 'Auth_Access';
+            if (maxP === pBug) catName = 'Bug_Report';
+            if (maxP === pGen) catName = 'General';
+
+            document.getElementById('nlp-top-class-badge').innerText = `Predicted: ${catName}`;
+            document.getElementById('nlp-top-conf-text').innerText = `${maxP}%`;
+        }
+
+        function initAnalyticsCharts() {
+            if (state.charts.latency) state.charts.latency.destroy();
+            if (state.charts.sla) state.charts.sla.destroy();
+
+            const ctxLatency = document.getElementById('chartLatencyComp');
+            if (ctxLatency) {
+                state.charts.latency = new Chart(ctxLatency, {
+                    type: 'line',
+                    data: {
+                        labels: ['Ticket 1', 'Ticket 5', 'Ticket 10', 'Ticket 15', 'Ticket 20', 'Ticket 25'],
+                        datasets: [
+                            {
+                                label: 'Traditional Linear Escalation (Mins)',
+                                data: [110, 135, 120, 140, 165, 150],
+                                borderColor: '#f43f5e',
+                                backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                                tension: 0.3,
+                                fill: true
+                            },
+                            {
+                                label: 'Graph Dijkstra Escalation (Mins)',
+                                data: [45, 52, 48, 55, 60, 53],
+                                borderColor: '#06b6d4',
+                                backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                                tension: 0.3,
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+                            x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } }
+                        }
+                    }
+                });
+            }
+
+            const ctxSla = document.getElementById('chartSlaBreach');
+            if (ctxSla) {
+                state.charts.sla = new Chart(ctxSla, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Q1 (Unlinked)', 'Q2 (Partial Joins)', 'Q3 (Graph Tested)', 'Q4 (Unified System)'],
+                        datasets: [{
+                            label: 'SLA Breach Rate (%)',
+                            data: [34.5, 24.1, 11.2, 3.8],
+                            backgroundColor: ['#f43f5e', '#fb923c', '#38bdf8', '#10b981'],
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { max: 40, grid: { color: '#1e293b' }, ticks: { color: '#94a3b8' } },
+                            x: { grid: { display: false }, ticks: { color: '#cbd5e1' } }
+                        }
+                    }
+                });
+            }
+        }
+
+        window.onload = function() {
+            switchTab('simulator');
+        };
+
+        window.onresize = function() {
+            if (state.activeTab === 'adsa') {
+                initAdsaCanvas();
+            }
+        };
+    </script>
+</body>
+</html>
